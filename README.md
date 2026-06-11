@@ -9,6 +9,7 @@ FM is a lightweight, terminal-based file manager written in C++ using `std::file
 - Remove files (`rm`)
 - Rename files or directories (`rn`)
 - Change directory (`cd`)
+- Create new files or directories (`mk`)
 - Built-in help command
 
 ## Requirements
@@ -40,6 +41,8 @@ You will see the current directory and its contents, followed by a command promp
 | `rm [filename]` | Remove a file |
 | `rn [oldname] [newname]` | Rename a file or directory |
 | `cd [path]` | Change the current directory |
+| `mk file [name]` | Create a new empty file |
+| `mk dir [name]` | Create a new directory |
 | `exit` | Exit the program |
 
 ## Example
@@ -58,7 +61,7 @@ Files:
 [FILE] main.cpp
 [FILE] README.md
 
-command: cd src
+command: mk dir build
 ```
 
 ## License

@@ -19,7 +19,7 @@ FM is a lightweight, terminal-based file manager written in C++ using `std::file
 ## Building
 
 ```bash
-g++ -std=c++17 -o fm main.cpp
+g++ -std=c++20 -o fm main.cpp
 ```
 
 ## Usage

@@ -4,6 +4,7 @@
 #include <vector>
 #include <filesystem>
 #include <string>
+#include <fstream>
 
 namespace fs = std::filesystem;
 
@@ -66,9 +67,10 @@ int main() {
       std::cout << "\033[2J\033[H";
       std::cout << "all command:\n";
       std::cout << "cp [from] [to]\n";
-      std::cout << "rm [filenane]\n";
+      std::cout << "rm [filename]\n";
       std::cout << "rn [oldname] [newname]\n";
       std::cout << "cd [path]\n";
+      std::cout << "mk [file/dir] [name]";
       std::cout << "exit\n";
       std::cout << "\nPress enter to continue";
       std::cin.get();
@@ -81,7 +83,7 @@ int main() {
       std::vector<std::string> args = split(command);
 
       if (args.size() != 3) {
-        std::cout << "Usege: cp [from] [to]\n";
+        std::cout << "Usage: cp [from] [to]\n";
         std::cout << "\n Press enter to continue";
         std::cin.get();
         continue;
@@ -94,9 +96,9 @@ int main() {
         fs::copy_options::recursive |
         fs::copy_options::overwrite_existing
     );
-        std::cout << "\nstatus: success\n\n";
-        std::cout << "Press enter to continue";
-        std::cin.get();
+          std::cout << "\n\nstatus: success";
+          std::cout << "\n\nPress Enter to coutinue";
+          std::cin.get();
         
       } catch (const fs::filesystem_error& e) {
         std::cout << "Error:\n";
@@ -112,7 +114,7 @@ int main() {
       std::vector<std::string> args = split(command);
 
       if (args.size() != 2) {
-        std::cout << "Usege: rm [filename]\n";
+        std::cout << "Usage: rm [filename]\n";
         std::cout << "\n Press enter to continue";
         std::cin.get();
         continue;
@@ -120,10 +122,18 @@ int main() {
       }
       try {
         
-        fs::remove(args[1]);
-        std::cout << "\nstatus: success\n\n";
-        std::cout << "Press enter to coutinue";
-        std::cin.get();
+        bool status = fs::remove(args[1]);
+        if (status) {
+          std::cout << "\n\nstatus: success";
+          std::cout << "\n\nPress Enter to coutinue";
+          std::cin.get();
+          
+        } else {
+          std::cout << "\n\nstatus: fail";
+          std::cout << "\n\nPress Enter to coutinue";
+          std::cin.get();
+        }
+        
           
       } catch (const fs::filesystem_error& e) {
         std::cout << "Error:\n";
@@ -138,7 +148,7 @@ int main() {
       std::vector<std::string> args = split(command);
 
       if (args.size() != 3) {
-        std::cout << "Usege: rm [oldname] [newname]\n";
+        std::cout << "Usage: rm [oldname] [newname]\n";
         std::cout << "\n Press enter to continue";
         std::cin.get();
         continue;
@@ -148,9 +158,9 @@ int main() {
           args[1],
           args[2]
         );
-        std::cout << "\nstatus: success\n\n";
-        std::cout << "Press enter to coutinue";
-        std::cin.get();
+          std::cout << "\n\nstatus: success";
+          std::cout << "\n\nPress Enter to coutinue";
+          std::cin.get();
         
       } catch (const fs::filesystem_error& e) {
         std::cout << "Error:\n";
@@ -165,7 +175,7 @@ int main() {
       std::vector<std::string> args = split(command);
 
       if (args.size() != 2) {
-        std::cout << "Usege: cd [path]\n";
+        std::cout << "Usage: cd [path]\n";
         std::cout << "\n Press enter to continue";
         std::cin.get();
         continue;
@@ -175,15 +185,63 @@ int main() {
         fs::current_path(args[1]);
         
       } catch (const fs::filesystem_error& e) {
-        std::cout << "Error:\n";
+        std::cout << "\nError:\n";
         std::cout << e.what();
         std::cout << "\nPress Enter to continue";
         std::cin.get();
       }
     } else if (command == "exit") {
       break;
+    } else if (command.starts_with("mk")) {
+      /*
+      mk (make)
+      */
+      std::vector<std::string> args = split(command);
+      if (args.size() != 3) {
+        std::cout << "Usage: mk [file/dir] [name]\n";
+        std::cout << "\n Press enter to continue";
+        std::cin.get();
+        continue;
+      }
+      if (args[1] == "file") {
+        std::ofstream file(args[2]);
+        if (file.is_open()) {
+          file.close();
+          std::cout << "\n\nstatus: success";
+          std::cout << "\n\nPress Enter to coutinue";
+          std::cin.get();
+          
+        } else {
+          std::cout << "\n\nstatus: fail";
+          std::cout << "\n\nPress Enter to coutinue";
+          std::cin.get();
+        }
+      } else if (args[1] == "dir") {
+        try {
+          bool status = fs::create_directories(args[2]);
+          if (status) {
+          std::cout << "\n\nstatus: success";
+          std::cout << "\n\nPress Enter to coutinue";
+          std::cin.get();
+          
+        } else {
+          std::cout << "\n\nstatus: fail (Directory already exists)";
+          std::cout << "\n\nPress Enter to coutinue";
+          std::cin.get();
+          }
+        } catch (fs::filesystem_error& e) {
+          std::cout << "\nError:\n";
+          std::cout << e.what();
+          std::cout << "\nPress Enter to continue";
+          std::cin.get();
+        }
+      } else {
+        std::cout << "Usage: mk [file/dir] [name]\n";
+        std::cout << "\nPress Enter to continue";
+        std::cin.get();
+      }
     } else {
-      std::cout << "unknow command";
+      std::cout << "unknown command";
       std::cout << "\n\nPress Enter to continue";
       std::cin.get();
     }

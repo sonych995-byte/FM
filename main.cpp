@@ -76,7 +76,7 @@ std::vector<std::string> split(const std::string& text) {
   }
 
 void pause() {
-    std::cout << "\n\nPress Enter to continue";
+    std::cout << "\n\nPress any button and enter to continue";
 
     std::string temp;
     std::getline(std::cin >> std::ws, temp);
@@ -248,6 +248,7 @@ int main() {
     home();
 
     std::string input;
+    std::cout << "\ncommand: ";
     std::getline(std::cin, input);
 
     std::vector<std::string> args;

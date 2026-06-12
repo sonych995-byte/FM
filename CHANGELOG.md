@@ -16,6 +16,8 @@
 - Restored the `command: ` prompt before reading input in the main loop
 - General code cleanup and formatting (spacing, blank lines) for readability across all functions
 
+---
+
 ## v.0.1.2 alpha
 
 ### Added
@@ -40,6 +42,8 @@
 ### Fixed
 - Fixed input handling so prompts using `std::getline` properly skip leading whitespace (`std::cin >> std::ws`)
 - Corrected inconsistent spacing/newlines in status and usage messages
+
+---
 
 ## v.0.1.0
 

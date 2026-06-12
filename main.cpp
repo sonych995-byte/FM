@@ -428,7 +428,7 @@ int main() {
             std::cout << "rm [file/dir]\n";
             std::cout << "cd [path/full path]\n";
             std::cout << "mk [file/dir] [name]\n";
-            std::cout << "info [path]";
+            std::cout << "info [path]\n";
             std::cout << "exit";
 
             pause();

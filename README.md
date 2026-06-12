@@ -6,10 +6,12 @@ FM is a lightweight, terminal-based file manager written in C++ using `std::file
 
 - Display current directory contents (files and folders)
 - Copy files or directories (`cp`)
-- Remove files (`rm`)
+- Remove files or directories with confirmation (`rm`)
 - Rename files or directories (`rn`)
 - Change directory (`cd`)
 - Create new files or directories (`mk`)
+- View detailed information about a file or folder (`info`)
+- Quoted argument support for names containing spaces
 - Built-in help command
 
 ## Requirements
@@ -19,7 +21,7 @@ FM is a lightweight, terminal-based file manager written in C++ using `std::file
 ## Building
 
 ```bash
-g++ -std=c++20 -o fm main.cpp
+g++ -std=c++17 -o fm main.cpp
 ```
 
 ## Usage
@@ -38,12 +40,15 @@ You will see the current directory and its contents, followed by a command promp
 |---|---|
 | `help` | Show the list of available commands |
 | `cp [from] [to]` | Copy a file or directory (recursive, overwrites existing) |
-| `rm [filename]` | Remove a file |
+| `rm [file/dir]` | Remove a file or directory (asks for confirmation) |
 | `rn [oldname] [newname]` | Rename a file or directory |
 | `cd [path]` | Change the current directory |
 | `mk file [name]` | Create a new empty file |
 | `mk dir [name]` | Create a new directory |
+| `info [path]` | Show details about a file or folder (size, type, permissions, contents) |
 | `exit` | Exit the program |
+
+Names containing spaces can be wrapped in double quotes, e.g. `mk file "my file.txt"`.
 
 ## Example
 
@@ -61,7 +66,7 @@ Files:
 [FILE] main.cpp
 [FILE] README.md
 
-command: mk dir build
+command: info main.cpp
 ```
 
 ## License

@@ -366,6 +366,60 @@ void cmd_info(const std::vector<std::string>& args) {
     pause();
 }
 
+void cmd_ls(const std::vector<std::string>& args) {
+
+    fs::path target;
+
+    // no argument → current path
+    if (args.size() == 1) {
+        target = fs::current_path();
+    }
+    // ls [path]
+    else if (args.size() == 2) {
+        target = args[1];
+    }
+    else {
+        std::cout << "\n\nUsage: ls [path]";
+        pause();
+        return;
+    }
+
+    // check exists
+    if (!fs::exists(target)) {
+        std::cout << "\n\nError: path not found";
+        pause();
+        return;
+    }
+
+    try {
+        std::cout << "\nListing: " << fs::absolute(target).string() << "\n\n";
+
+        for (const auto& entry : fs::directory_iterator(target)) {
+
+            // type
+            if (entry.is_directory()) {
+                std::cout << "[DIR]  ";
+            } else {
+                std::cout << "[FILE] ";
+            }
+
+            // name
+            std::cout << entry.path().filename().string() << "\n";
+        }
+
+    } catch (const fs::filesystem_error& e) {
+        show_error(e);
+        pause();
+    }
+
+    pause();
+}
+
+void cmd_pwd() {
+  std::cout << "\n\ncurrent path: " << fs::current_path() << "\n\n";
+  pause();
+}
+
 // ==================================================
 // Main Program
 // ==================================================
@@ -373,7 +427,7 @@ void cmd_info(const std::vector<std::string>& args) {
 int main() {
 
     while (true) {
-
+        std::cout << "\033[2J\033[H";
         home();
 
         std::string input;
@@ -429,6 +483,8 @@ int main() {
             std::cout << "cd [path/full path]\n";
             std::cout << "mk [file/dir] [name]\n";
             std::cout << "info [path]\n";
+            std::cout << "ls [path]\n";
+            std::cout << "pwd\n";
             std::cout << "exit";
 
             pause();
@@ -441,8 +497,14 @@ int main() {
           
           cmd_info(args);
           
+        } else if (args[0] == "ls") {
+          
+          cmd_ls(args);
+          
+        } else if (args[0] == "pwd") {
+          cmd_pwd();
         } else {
-          std::cout << "\n\nUnknown commamd";
+          std::cout << "\n\nUnknown command";
           pause();
         }
     }

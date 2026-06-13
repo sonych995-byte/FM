@@ -1,5 +1,16 @@
 # Changelog
  
+## [v.0.4.0-alpha]
+ 
+### Added
+- New `oscmd [command]` command (`cmd_oscmd`) to run operating system commands via `std::system`, with a confirmation prompt before execution
+- Single-quote support in command parsing (in addition to double quotes), required for `oscmd` arguments
+- New detailed `cmd_help()` screen describing syntax, examples, and output for every command (replaces the short command list)
+- `oscmd` added to the help screen
+### Changed
+- `split()` rewritten to track double-quote and single-quote state separately, throwing distinct errors for unmatched double or single quotes
+- `help` command now calls `cmd_help()` and shows a full reference screen instead of a short list
+ 
 ## [v.0.3.0-alpha]
  
 ### Added

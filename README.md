@@ -11,6 +11,8 @@ FM is a lightweight, terminal-based file manager written in C++ using `std::file
 - Change directory (`cd`)
 - Create new files or directories (`mk`)
 - View detailed information about a file or folder (`info`)
+- List contents of a directory (`ls`)
+- Print the current working directory (`pwd`)
 - Quoted argument support for names containing spaces
 - Built-in help command
 
@@ -46,6 +48,8 @@ You will see the current directory and its contents, followed by a command promp
 | `mk file [name]` | Create a new empty file |
 | `mk dir [name]` | Create a new directory |
 | `info [path]` | Show details about a file or folder (size, type, permissions, contents) |
+| `ls [path]` | List contents of a directory (current directory if no path given) |
+| `pwd` | Print the current working directory |
 | `exit` | Exit the program |
 
 Names containing spaces can be wrapped in double quotes, e.g. `mk file "my file.txt"`.
@@ -66,7 +70,7 @@ Files:
 [FILE] main.cpp
 [FILE] README.md
 
-command: info main.cpp
+command: ls src
 ```
 
 ## License

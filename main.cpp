@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <string>
 #include <fstream>
+#include <cstdlib>
 #include <exception>
 
 namespace fs = std::filesystem;
@@ -52,18 +53,26 @@ std::vector<std::string> split(const std::string& text) {
     std::vector<std::string> result;
 
     std::string current;
-    bool in_quotes = false;
+
+    bool in_double_quotes = false;
+    bool in_single_quotes = false;
 
     for (char c : text) {
 
-        // Toggle quote mode
-        if (c == '"') {
-            in_quotes = !in_quotes;
+        // Double quote
+        if (c == '"' && !in_single_quotes) {
+            in_double_quotes = !in_double_quotes;
             continue;
         }
 
-        // Split on spaces outside quotes
-        if (c == ' ' && !in_quotes) {
+        // Single quote
+        if (c == '\'' && !in_double_quotes) {
+            in_single_quotes = !in_single_quotes;
+            continue;
+        }
+
+        // Split only outside quotes
+        if (c == ' ' && !in_double_quotes && !in_single_quotes) {
 
             if (!current.empty()) {
                 result.push_back(current);
@@ -75,12 +84,14 @@ std::vector<std::string> split(const std::string& text) {
         }
     }
 
-    // Detect missing closing quote
-    if (in_quotes) {
-        throw std::runtime_error("Missing closing quote");
+    if (in_double_quotes) {
+        throw std::runtime_error("Missing closing double quote");
     }
 
-    // Add final argument
+    if (in_single_quotes) {
+        throw std::runtime_error("Missing closing single quote");
+    }
+
     if (!current.empty()) {
         result.push_back(current);
     }
@@ -420,8 +431,144 @@ void cmd_pwd() {
   pause();
 }
 
+void cmd_oscmd(const std::vector<std::string>& args) {
+    if (args.size() != 2) {
+        std::cout << "\n\nUsage: oscmd [command]";
+        pause();
+    }
+
+    if (args[1] == "./fm" || args[1] == "fm") {
+        std::cout << "\n\ncannot launch fm inside fm";
+        pause();
+    }
+    
+    std::string conti;
+    std::cout << "\n\nSome commands are dangerous";
+    std::cout << "\nContinue? [Y/n]: ";
+    std::cin >> conti;
+
+    if (conti == "Y" || conti == "y") {
+        std::system(args[1].c_str());
+        show_success();
+        pause();
+    } else {
+        return;
+    }
+
+}
+
+void cmd_help() {
+        std::cout << "\033[2J\033[H";
+        std::cout << "\n\n" << R"(
+        All Command:
+        
+        1. cp (copy)
+
+        Syntax:
+         - cp [from] [to]
+        
+        Example:
+         - cp test.cpp main.cpp
+
+        Output:
+        Create a new file named [to] with contents belonging to [from].
+
+        2. rn (rename)
+
+        Syntax:
+         - rn [oldname] [newname]
+
+        Example:
+         - rn test.cpp main.cpp
+
+        Output:
+        Rename the file [oldname] to [newname].
+
+        3. rm (remove)
+
+        Syntax:
+         - rm [filename]
+
+        Example:
+         - rm useless.cpp
+
+        Output:
+        Delete the file named [filename].
+
+        4. cd
+        Syntax:
+         - cd [path]
+
+        Example:
+         - cd storage/myfolder
+         
+        Output:
+         Go to path [path]
+         
+        5. mk (make)
+        
+        Syntax:
+         - mk file [name]
+         - mk dir [name]
+         
+        Example:
+       Program  - mk file src.cpp
+         - mk dir myfolder
+         
+        Output:
+        If the command is `mk file [name]`, it will create an empty file named [name]. If the command is `mk dir [name]`, it will create an empty folder named [name].
+        
+        6. info
+        
+        Syntax:
+         - info [file name/dir name]
+         
+        Example:
+         - info src
+         
+        Output:
+        View detailed information about a file or folder
+        
+        7. ls (list)
+        
+        Syntax:
+         - ls
+         - ls [path]
+         
+        Example:
+         - ls
+         - ls storage/myfolder
+         
+        Output:
+        List contents of a directory
+        
+        8. pwd
+        
+        Syntax:
+         - pwd
+         
+        Example:
+         - pwd
+         
+        Output:
+        Print the current working directory
+        
+        9. oscmd
+        
+        Syntax:
+         - oscmd [os command]
+         
+        Example:
+         - oscmd 'pkg install git'
+         
+        Output:
+        Use operating system commands, which require single or double quotes, as shown in the example.)";
+        pause();
+    }
+
+
 // ==================================================
-// Main Program
+// Main 
 // ==================================================
 
 int main() {
@@ -476,18 +623,7 @@ int main() {
 
         } else if (args[0] == "help") {
 
-            std::cout << "\n\nAll command\n";
-            std::cout << "cp [from] [to]\n";
-            std::cout << "rn [oldname] [newname]\n";
-            std::cout << "rm [file/dir]\n";
-            std::cout << "cd [path/full path]\n";
-            std::cout << "mk [file/dir] [name]\n";
-            std::cout << "info [path]\n";
-            std::cout << "ls [path]\n";
-            std::cout << "pwd\n";
-            std::cout << "exit";
-
-            pause();
+            cmd_help();
 
         } else if (args[0] == "exit") {
 
@@ -502,10 +638,16 @@ int main() {
           cmd_ls(args);
           
         } else if (args[0] == "pwd") {
+
           cmd_pwd();
+
+        } else if (args[0] == "oscmd") {
+            
+          cmd_oscmd(args);
+
         } else {
-          std::cout << "\n\nUnknown command";
-          pause();
+            std::cout << "\n\nUnknown command";
+            pause();
         }
     }
 

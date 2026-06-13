@@ -1,4 +1,14 @@
 # Changelog
+ 
+## [v.0.3.0-alpha]
+ 
+### Added
+- New `ls [path]` command (`cmd_ls`) to list contents of a directory (defaults to current path if no argument given)
+- New `pwd` command (`cmd_pwd`) to print the current working directory
+- `ls` and `pwd` added to the `help` menu
+### Changed
+- Main loop now clears the screen explicitly before calling `home()`
+- Fixed typo "Unknown commamd" -> "Unknown command"
 
 ## V.0.2.0 alpha
 

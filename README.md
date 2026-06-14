@@ -20,16 +20,39 @@ FM is a lightweight, terminal-based file manager written in C++ using `std::file
 ## Requirements
  
 - A C++17 (or later) compatible compiler (e.g. g++, clang++)
+## Project Structure
+ 
+```
+fm/
+├── main.cpp
+├── include/
+│   ├── common.hpp
+│   ├── utils.hpp
+│   └── commands.hpp
+└── src/
+    ├── utils.cpp
+    ├── cp.cpp
+    ├── rn.cpp
+    ├── rm.cpp
+    ├── cd.cpp
+    ├── mk.cpp
+    ├── info.cpp
+    ├── ls.cpp
+    ├── pwd.cpp
+    ├── oscmd.cpp
+    └── help.cpp
+```
+ 
 ## Building
  
 **Linux / macOS**
 ```bash
-g++ -std=c++17 -o fm main.cpp
+g++ -std=c++17 -o fm main.cpp src/utils.cpp src/cp.cpp src/rn.cpp src/rm.cpp src/cd.cpp src/mk.cpp src/info.cpp src/ls.cpp src/pwd.cpp src/oscmd.cpp src/help.cpp
 ```
  
 **Windows**
 ```bash
-g++ -std=c++17 -o fm.exe main.cpp
+g++ -std=c++17 -o fm.exe main.cpp src/utils.cpp src/cp.cpp src/rn.cpp src/rm.cpp src/cd.cpp src/mk.cpp src/info.cpp src/ls.cpp src/pwd.cpp src/oscmd.cpp src/help.cpp
 ```
  
 ## Usage

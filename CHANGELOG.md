@@ -1,6 +1,33 @@
 # Changelog
+
+## v.0.4.1-alpha
  
-## [v.0.4.0-alpha]
+### Added
+- `clear_screen()` utility function that calls `cls` on Windows and `clear` on other platforms via preprocessor (`#ifdef _WIN32`), replacing all hardcoded `\033[2J\033[H` ANSI escape sequences
+- `cmd_cp` now uses `fs::equivalent()` to detect when `from` and `to` refer to the same file via different paths (e.g. symlinks or different relative/absolute forms), not just string equality
+- `cmd_oscmd` self-launch guard extended to also block `"fm.exe"` (Windows executable name), in addition to `"fm"` and `"./fm"`
+- `cmd_oscmd` argument check now has a proper `return` after the usage error message (fixes previous undefined behavior from missing `return`)
+- `cmd_oscmd` self-launch guard now has a proper `return` after the warning (fixes previous fallthrough bug)
+- `cmd_ls` now handles the case where `target` is a regular file: prints its name as `[FILE]` and pauses, instead of throwing a `filesystem_error`
+- `cmd_mk` usage error for invalid subcommand now has a proper `return` (previously fell off the end of the function)
+- `cmd_info` error path now has a proper `return` after `pause()` inside the catch block, fixing the double-pause bug
+- `cmd_ls` error path now has a proper `return` after `pause()` inside the catch block, fixing the double-pause bug
+- More inline comments added throughout explaining intent (e.g. `split()`, `cmd_rm`, `cmd_cd`, `cmd_mk`, `cmd_ls`, `cmd_oscmd`)
+### Changed
+- `home()` no longer calls `clear_screen()` itself; the main loop calls `clear_screen()` then `home()` separately
+- All `\033[2J\033[H` escape sequences replaced with `clear_screen()` calls for cross-platform compatibility
+- `cmd_info` switched from `\033[2J\033[H` to `clear_screen()`
+- `cmd_help` switched from `\033[2J\033[H` to `clear_screen()`
+- Fixed all remaining `"Useage"` typos to `"Usage"` across all commands (`cp`, `rn`, `cd`, `mk`)
+- `cmd_ls` column alignment changed: `[DIR]` and `[FILE]` now both use single space after the bracket (previously `[DIR]` had two spaces for alignment)
+### Fixed
+- `cmd_oscmd`: missing `return` after usage error - previously could read `args[1]` out of bounds
+- `cmd_oscmd`: missing `return` after self-launch guard - previously the warning was shown but `std::system` could still be called
+- `cmd_info`: double-pause on error path - now returns immediately after catch block
+- `cmd_ls`: double-pause on error path - now returns immediately after catch block
+- `cmd_ls`: calling `ls` on a regular file no longer throws a `filesystem_error`; it now displays the file as `[FILE]`
+ 
+## v.0.4.0-alpha
  
 ### Added
 - New `oscmd [command]` command (`cmd_oscmd`) to run operating system commands via `std::system`, with a confirmation prompt before execution
@@ -11,7 +38,7 @@
 - `split()` rewritten to track double-quote and single-quote state separately, throwing distinct errors for unmatched double or single quotes
 - `help` command now calls `cmd_help()` and shows a full reference screen instead of a short list
  
-## [v.0.3.0-alpha]
+## v.0.3.0-alpha
  
 ### Added
 - New `ls [path]` command (`cmd_ls`) to list contents of a directory (defaults to current path if no argument given)

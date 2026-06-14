@@ -55,6 +55,71 @@ g++ -std=c++17 -o fm main.cpp src/utils.cpp src/cp.cpp src/rn.cpp src/rm.cpp src
 g++ -std=c++17 -o fm.exe main.cpp src/utils.cpp src/cp.cpp src/rn.cpp src/rm.cpp src/cd.cpp src/mk.cpp src/info.cpp src/ls.cpp src/pwd.cpp src/oscmd.cpp src/help.cpp
 ```
  
+**Termux (Android)**
+```bash
+pkg install clang
+clang++ -std=c++17 -o fm main.cpp src/utils.cpp src/cp.cpp src/rn.cpp src/rm.cpp src/cd.cpp src/mk.cpp src/info.cpp src/ls.cpp src/pwd.cpp src/oscmd.cpp src/help.cpp
+```
+ 
+## Running `fm` From Anywhere
+ 
+After building the binary, you can install it so the `fm` command works in any directory, without typing `./fm` or the full path.
+ 
+### Linux / macOS / WSL
+ 
+Move the compiled binary to a directory that's already in your `PATH`, such as `/usr/local/bin`:
+ 
+```bash
+sudo mv fm /usr/local/bin/fm
+sudo chmod +x /usr/local/bin/fm
+```
+ 
+Now you can run `fm` from any folder:
+ 
+```bash
+fm
+```
+ 
+Alternatively, without `sudo`, create a personal bin folder and add it to `PATH`:
+ 
+```bash
+mkdir -p ~/bin
+mv fm ~/bin/fm
+echo 'export PATH="$HOME/bin:$PATH"' >> ~/.bashrc   # or ~/.zshrc on macOS
+source ~/.bashrc
+```
+ 
+### Termux (Android)
+ 
+Termux already has `$PREFIX/bin` in `PATH`, so just move the binary there:
+ 
+```bash
+mv fm $PREFIX/bin/fm
+chmod +x $PREFIX/bin/fm
+```
+ 
+Then run from anywhere with:
+ 
+```bash
+fm
+```
+ 
+### Windows
+ 
+1. Build `fm.exe` as shown above.
+2. Create a folder for your tools, e.g. `C:\tools`, and copy `fm.exe` into it.
+3. Add that folder to your `PATH`:
+   - Press `Win + R`, type `sysdm.cpl`, press Enter.
+   - Go to **Advanced** → **Environment Variables**.
+   - Under **User variables**, select `Path` → **Edit** → **New**, then add `C:\tools`.
+   - Click OK on all dialogs.
+4. Open a new Command Prompt / PowerShell window and run:
+```bash
+fm
+```
+ 
+> Tip: Verify the install by running `fm` from any directory (e.g. your Desktop). If the file manager starts up, the installation worked correctly.
+ 
 ## Usage
  
 Run the compiled program:

@@ -15,7 +15,6 @@ namespace fs = std::filesystem;
 
 // Display current directory and file list
 void home() {
-    std::cout << "\033[2J\033[H";
     std::cout << "=========================\n\n";
     std::cout << "file manager\n\n";
     std::cout << "=========================\n\n";
@@ -59,19 +58,19 @@ std::vector<std::string> split(const std::string& text) {
 
     for (char c : text) {
 
-        // Double quote
+        // Toggle double-quote mode so spaces inside quotes stay attached.
         if (c == '"' && !in_single_quotes) {
             in_double_quotes = !in_double_quotes;
             continue;
         }
 
-        // Single quote
+        // Toggle single-quote mode so spaces inside quotes stay attached.
         if (c == '\'' && !in_double_quotes) {
             in_single_quotes = !in_single_quotes;
             continue;
         }
 
-        // Split only outside quotes
+        // Split only on spaces that are not wrapped in quotes.
         if (c == ' ' && !in_double_quotes && !in_single_quotes) {
 
             if (!current.empty()) {
@@ -125,6 +124,14 @@ void show_error(const std::exception& e) {
     std::cout << e.what();
 }
 
+void clear_screen() {
+#ifdef _WIN32
+    std::system("cls");
+#else
+    std::system("clear");
+#endif
+}
+
 // ==================================================
 // Commands
 // ==================================================
@@ -133,12 +140,17 @@ void show_error(const std::exception& e) {
 void cmd_cp(const std::vector<std::string>& args) {
 
     if (args.size() != 3) {
-        std::cout << "\n\nUseage: cp [from] [to]";
+        std::cout << "\n\nUsage: cp [from] [to]";
         pause();
         return;
     }
 
     if (args[1] == args[2]) {
+        show_fail();
+        return;
+    }
+
+    if (fs::exists(args[1]) && fs::exists(args[2]) && fs::equivalent(args[1], args[2])) {
         show_fail();
         return;
     }
@@ -165,7 +177,7 @@ void cmd_cp(const std::vector<std::string>& args) {
 void cmd_rn(const std::vector<std::string>& args) {
 
     if (args.size() != 3) {
-        std::cout << "\n\nUseage: rn [oldname] [newname]";
+        std::cout << "\n\nUsage: rn [oldname] [newname]";
         pause();
         return;
     }
@@ -195,7 +207,7 @@ void cmd_rm(const std::vector<std::string>& args) {
         return;
     }
 
-    // Check target exists
+    // Refuse to delete a path that does not exist.
     if (!fs::exists(args[1])) {
         std::cout << "\n\nError: not found";
         pause();
@@ -207,7 +219,7 @@ void cmd_rm(const std::vector<std::string>& args) {
     std::cout << "\n\nContinue? [Y/n]: ";
     std::getline(std::cin >> std::ws, conti);
 
-    // Cancel deletion
+    // Only continue when the user confirms the destructive action.
     if (conti != "Y" && conti != "y") {
         return;
     }
@@ -230,13 +242,14 @@ void cmd_rm(const std::vector<std::string>& args) {
 void cmd_cd(const std::vector<std::string>& args) {
 
     if (args.size() != 2) {
-        std::cout << "\n\nUseage: cd [folder/path]";
+        std::cout << "\n\nUsage: cd [folder/path]";
         pause();
         return;
     }
 
     try {
 
+        // Change the process working directory for the next commands.
         fs::current_path(args[1]);
 
         return;
@@ -252,12 +265,12 @@ void cmd_cd(const std::vector<std::string>& args) {
 void cmd_mk(const std::vector<std::string>& args) {
 
     if (args.size() != 3) {
-        std::cout << "\n\nUseage: mk [file/dir] [name]";
+        std::cout << "\n\nUsage: mk [file/dir] [name]";
         pause();
         return;
     }
 
-    // Create file
+    // Create an empty file when the subcommand is "file".
     if (args[1] == "file") {
 
         if (fs::exists(args[2])) {
@@ -284,7 +297,7 @@ void cmd_mk(const std::vector<std::string>& args) {
             }
         }
 
-    // Create directory
+    // Create a directory tree when the subcommand is "dir".
     } else if (args[1] == "dir") {
 
         try {
@@ -308,8 +321,9 @@ void cmd_mk(const std::vector<std::string>& args) {
 
     } else {
 
-        std::cout << "\n\nUseage: mk [file/dir] [name]";
+        std::cout << "\n\nUsage: mk [file/dir] [name]";
         pause();
+        return;
     }
 }
 
@@ -329,13 +343,14 @@ void cmd_info(const std::vector<std::string>& args) {
     }
 
     try {
-        std::cout << "\033[2J\033[H";
+        clear_screen();
         std::cout << "\n\n==== INFO ====\n";
         std::cout << "Name: " << p.filename().string() << "\n";
         std::cout << "Path: " << fs::absolute(p).string() << "\n";
 
         if (fs::is_regular_file(p)) {
 
+            // File-specific metadata.
             std::cout << "Type: File\n";
             std::cout << "Extension: " << p.extension().string() << "\n";
             std::cout << "Size: " << fs::file_size(p) << " bytes\n";
@@ -349,6 +364,7 @@ void cmd_info(const std::vector<std::string>& args) {
         }
         else if (fs::is_directory(p)) {
 
+            // Folder-specific metadata, including a recursive size estimate.
             std::cout << "Type: Folder\n";
 
             uintmax_t total_size = 0;
@@ -372,16 +388,18 @@ void cmd_info(const std::vector<std::string>& args) {
     } catch (const fs::filesystem_error& e) {
         show_error(e);
         pause();
+        return;
     }
 
     pause();
+    return;
 }
 
 void cmd_ls(const std::vector<std::string>& args) {
 
     fs::path target;
 
-    // no argument → current path
+    // No argument means list the current working directory.
     if (args.size() == 1) {
         target = fs::current_path();
     }
@@ -402,44 +420,56 @@ void cmd_ls(const std::vector<std::string>& args) {
         return;
     }
 
+    if (fs::is_regular_file(target)) {
+        std::cout << "\nListing: " << fs::absolute(target).string() << "\n\n";
+        std::cout << "[FILE] " << target.filename().string() << '\n';
+        pause();
+        return;
+}
+
     try {
         std::cout << "\nListing: " << fs::absolute(target).string() << "\n\n";
 
+        // Print one level of contents for folders.
         for (const auto& entry : fs::directory_iterator(target)) {
-
-            // type
+            
             if (entry.is_directory()) {
-                std::cout << "[DIR]  ";
+                std::cout << "[DIR] ";
             } else {
                 std::cout << "[FILE] ";
             }
-
-            // name
-            std::cout << entry.path().filename().string() << "\n";
+            
+            std::cout << entry.path().filename().string() << '\n';
         }
 
     } catch (const fs::filesystem_error& e) {
         show_error(e);
         pause();
+        return;
     }
 
     pause();
+    return;
 }
 
 void cmd_pwd() {
   std::cout << "\n\ncurrent path: " << fs::current_path() << "\n\n";
   pause();
+  return;
 }
 
 void cmd_oscmd(const std::vector<std::string>& args) {
     if (args.size() != 2) {
         std::cout << "\n\nUsage: oscmd [command]";
         pause();
+        return;
     }
 
-    if (args[1] == "./fm" || args[1] == "fm") {
+    // Prevent the app from spawning itself recursively.
+    if (args[1] == "fm" || args[1] == "./fm" || args[1] == "fm.exe") {
         std::cout << "\n\ncannot launch fm inside fm";
         pause();
+        return;
     }
     
     std::string conti;
@@ -448,9 +478,10 @@ void cmd_oscmd(const std::vector<std::string>& args) {
     std::cin >> conti;
 
     if (conti == "Y" || conti == "y") {
+        // Run the requested OS command only after explicit confirmation.
         std::system(args[1].c_str());
         show_success();
-        pause();
+        return;
     } else {
         return;
     }
@@ -458,7 +489,7 @@ void cmd_oscmd(const std::vector<std::string>& args) {
 }
 
 void cmd_help() {
-        std::cout << "\033[2J\033[H";
+        clear_screen();
         std::cout << "\n\n" << R"(
         All Command:
         
@@ -574,7 +605,7 @@ void cmd_help() {
 int main() {
 
     while (true) {
-        std::cout << "\033[2J\033[H";
+        clear_screen();
         home();
 
         std::string input;

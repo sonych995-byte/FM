@@ -1,5 +1,10 @@
 # Changelog
 
+## v.0.4.2-alpha
+
+### Change
+Separate the commands into files.
+
 ## v.0.4.1-alpha
  
 ### Added

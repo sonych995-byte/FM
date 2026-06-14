@@ -11,18 +11,25 @@ FM is a lightweight, terminal-based file manager written in C++ using `std::file
 - Change directory (`cd`)
 - Create new files or directories (`mk`)
 - View detailed information about a file or folder (`info`)
-- List contents of a directory (`ls`)
+- List contents of a directory or inspect a single file (`ls`)
 - Print the current working directory (`pwd`)
 - Run operating system commands with confirmation (`oscmd`)
 - Quoted argument support (double and single quotes) for names and commands containing spaces
+- Cross-platform screen clearing (Windows `cls` / Unix `clear`)
 - Detailed built-in help command with syntax, examples, and output for every command
 ## Requirements
  
 - A C++17 (or later) compatible compiler (e.g. g++, clang++)
 ## Building
  
+**Linux / macOS**
 ```bash
 g++ -std=c++17 -o fm main.cpp
+```
+ 
+**Windows**
+```bash
+g++ -std=c++17 -o fm.exe main.cpp
 ```
  
 ## Usage
@@ -45,9 +52,9 @@ You will see the current directory and its contents, followed by a command promp
 | `rn [oldname] [newname]` | Rename a file or directory |
 | `cd [path]` | Change the current directory |
 | `mk file [name]` | Create a new empty file |
-| `mk dir [name]` | Create a new directory |
+| `mk dir [name]` | Create a new directory (including intermediate directories) |
 | `info [path]` | Show details about a file or folder (size, type, permissions, contents) |
-| `ls [path]` | List contents of a directory (current directory if no path given) |
+| `ls [path]` | List contents of a directory, or inspect a single file (current directory if no path given) |
 | `pwd` | Print the current working directory |
 | `oscmd [command]` | Run an OS command (asks for confirmation; some commands can be dangerous) |
 | `exit` | Exit the program |
@@ -59,7 +66,7 @@ Names containing spaces can be wrapped in double or single quotes, e.g. `mk file
 ```
 =========================
  
-file manager (v.
+file manager
  
 =========================
  
@@ -70,13 +77,13 @@ Files:
 [FILE] main.cpp
 [FILE] README.md
  
-command: oscmd 'ls -la'
+command: info main.cpp
 ```
  
 ## Notes
  
-- `oscmd` executes raw OS commands via `std::system` and will prompt for confirmation before running, as some commands can be destructive. Running `fm` or `./fm` through `oscmd` is blocked.
+- `oscmd` executes raw OS commands via `std::system` and prompts for confirmation before running. Running `fm`, `./fm`, or `fm.exe` through `oscmd` is blocked to prevent recursive launching.
+- Screen clearing works cross-platform: `cls` on Windows, `clear` on Linux/macOS.
 ## License
  
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
- 

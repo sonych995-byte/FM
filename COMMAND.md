@@ -6,7 +6,7 @@ This document explains every command in FM in detail, including the internal C++
  
 ## Project Structure
  
-Since v0.5.0-alpha, the codebase is split into multiple files:
+Since v0.5.0-alpha, the codebase is split into multiple files. As of v0.6.0-alpha, the structure is:
  
 ```
 fm/
@@ -20,8 +20,12 @@ fm/
     ├── cp.cpp             cmd_cp()
     ├── rn.cpp             cmd_rn()
     ├── rm.cpp             cmd_rm()
+    ├── mv.cpp             cmd_mv()
     ├── cd.cpp             cmd_cd()
     ├── mk.cpp             cmd_mk()
+    ├── cat.cpp            cmd_cat()
+    ├── find.cpp           cmd_find(), search_file()
+    ├── edit.cpp           cmd_edit()
     ├── info.cpp           cmd_info()
     ├── ls.cpp             cmd_ls()
     ├── pwd.cpp            cmd_pwd()
@@ -48,6 +52,7 @@ Before any command runs, the raw input line is passed through `split()`, which:
 - These exceptions are caught in `main()`, printed via `show_error()`, followed by `pause()`, and the loop `continue`s.
 - Quote characters themselves are stripped from the resulting argument (e.g. `mk file "my file.txt"` → arg is `my file.txt`).
 - Empty input (after parsing, `args.empty()`) is silently ignored; the loop redraws `home()`.
+
 ### Screen Clearing — `clear_screen()` (`src/utils.cpp`)
  
 ```cpp
@@ -69,6 +74,7 @@ Called at the start of every main loop iteration and inside `cmd_info` and `cmd_
 - **`show_success()`** — prints `"\n\nstatus: success\n\n"` then calls `pause()`.
 - **`show_fail()`** — prints `"\n\nstatus: fail\n\n"` then calls `pause()`.
 - **`show_error(e)`** — prints `"\n\nError:\n"` followed by `e.what()`. Does **not** call `pause()` itself; every call site must do so.
+
 ### Main Loop (`main.cpp`)
  
 - Calls `clear_screen()` then `home()` at the start of each iteration.
@@ -76,6 +82,7 @@ Called at the start of every main loop iteration and inside `cmd_info` and `cmd_
 - `exit` is checked first with a standalone `if`, then all other commands follow in an `if/else if` chain.
 - Unknown commands print `"\n\nUnknown command"` and call `pause()`.
 - Dispatch is case-sensitive and exact-match only (`CP`, `Exit`, etc. are all unknown).
+
 ---
  
 ## Command Details
@@ -97,9 +104,11 @@ Called at the start of every main loop iteration and inside `cmd_info` and `cmd_
   - `overwrite_existing`: silently overwrites `to` if it already exists.
 - **On success:** `show_success()`.
 - **On `fs::filesystem_error`:** `show_error(e)` then `pause()`.
+
 **Notes:**
 - No explicit check that `from` exists before calling `fs::copy`; the underlying exception handles it.
 - Copying a directory into itself (where paths are not string-equal but not yet filesystem-equivalent) may throw a `filesystem_error` caught by the generic handler.
+
 ---
  
 ### 2. `rn [oldname] [newname]` — Rename
@@ -112,12 +121,31 @@ Called at the start of every main loop iteration and inside `cmd_info` and `cmd_
   - Can move a file across directories if `newname` includes a path.
 - **On success:** `show_success()`.
 - **On `fs::filesystem_error`:** `show_error(e)` then `pause()`.
+
 **Notes:**
 - No existence check; relies entirely on the exception from `fs::rename`.
 - `rn a a` is attempted as-is — typically a no-op or an error depending on the OS.
+
 ---
  
-### 3. `rm [file/folder]` — Remove
+### 3. `mv [source] [destination]` — Move/Rename
+ 
+**Source:** `src/mv.cpp`
+ 
+- **Argument check:** requires exactly 3 tokens. If not, prints `"\n\nUsage: mv [source] [destination]"` and pauses.
+- **Operation:** `fs::rename(args[1], args[2])`.
+  - Works on both files and directories.
+  - Can move across directories if `destination` includes a path component.
+- **On success:** `show_success()`.
+- **On `fs::filesystem_error`:** `show_error(e)` then `pause()`.
+
+**Notes:**
+- Functionally identical to `rn`; both use `fs::rename` internally. `mv` follows the Unix convention of moving to a destination path, while `rn` communicates intent to rename in place.
+- No existence check on `source`; the exception from `fs::rename` handles it.
+
+---
+ 
+### 4. `rm [file/folder]` — Remove
  
 **Source:** `src/rm.cpp`
  
@@ -133,9 +161,10 @@ Called at the start of every main loop iteration and inside `cmd_info` and `cmd_
   - Return value (number of removed items) is **not checked**; success is assumed if no exception is thrown.
 - **On success:** `show_success()`.
 - **On `fs::filesystem_error`:** `show_error(e)` then `pause()`.
+
 ---
  
-### 4. `cd [path]` — Change Directory
+### 5. `cd [path]` — Change Directory
  
 **Source:** `src/cd.cpp`
  
@@ -143,16 +172,19 @@ Called at the start of every main loop iteration and inside `cmd_info` and `cmd_
 - **Operation:** `fs::current_path(path)` — changes the process's working directory. Takes effect on the next iteration's `home()` call.
 - **On success:** returns silently.
 - **On `fs::filesystem_error`:** `show_error(e)` then `pause()`.
+
 **Notes:**
 - No explicit check that the target is a directory; relies on the exception from `fs::current_path`.
 - `cd ..` and absolute paths both work as expected.
+
 ---
  
-### 5. `mk file [name]` / `mk dir [name]` — Make File or Directory
+### 6. `mk file [name]` / `mk dir [name]` — Make File or Directory
  
 **Source:** `src/mk.cpp`
  
 - **Argument check:** requires exactly 3 tokens. If not, prints `"\n\nUsage: mk [file/dir] [name]"`, pauses, and returns.
+
 #### `mk file [name]`
  
 - **Existence check:** if `fs::exists(name)` is true, prints `"\n\nstatus: fail (File already exists)"` and pauses (distinct wording from `show_fail()`).
@@ -160,18 +192,95 @@ Called at the start of every main loop iteration and inside `cmd_info` and `cmd_
   - If open succeeds: closes the file (creating an empty file) and calls `show_success()`.
   - If open fails (invalid path, permission denied): calls `show_fail()` — **no error details are shown**.
 - Parent directories are **not** created automatically; if the parent doesn't exist, the ofstream simply fails.
+
 #### `mk dir [name]`
  
 - **Creation:** `fs::create_directories(name)` — creates all intermediate directories (`mkdir -p` behavior).
   - Returns `true` if at least one new directory was created → `show_success()`.
   - Returns `false` if the full path already exists → `show_fail()` (indistinguishable from other failures).
 - **On `fs::filesystem_error`:** `show_error(e)` then `pause()`.
+
 #### Invalid subcommand
  
 - Prints `"\n\nUsage: mk [file/dir] [name]"`, pauses, and returns.
+
 ---
  
-### 6. `info [path]` — File/Folder Information
+### 7. `cat [filename]` — Display File Contents
+ 
+**Source:** `src/cat.cpp`
+ 
+- **Argument check:** requires exactly 2 tokens. If not, prints `"\n\nUsage: cat [filename]"` and pauses.
+- Opens `args[1]` with `std::ifstream`.
+  - If open fails: throws `std::runtime_error("Could not open file")`.
+- Reads and prints every line via `std::getline` loop.
+- Closes the file and calls `show_success()` after all lines are printed.
+- **On `std::exception`:** `show_error(e)` then `pause()`.
+
+**Notes:**
+- No binary detection; attempting to `cat` a binary file will print garbled output without error.
+- Very large files are printed in full with no paging.
+
+---
+ 
+### 8. `find [path] [filename]` — Search Files
+ 
+**Source:** `src/find.cpp`
+ 
+- **Argument check:** requires exactly 3 tokens. If not, prints `"\n\nUsage: find [path] [filename]"` and pauses.
+- Prints `"\nSearching...\n\n"` immediately before iterating.
+
+#### Path resolution
+ 
+| `args[1]` | Resolved search root |
+|---|---|
+| `/` | Entire filesystem (all drives A–Z on Windows, `/` on Unix/macOS) |
+| `.` | `fs::current_path()` |
+| `..` | `fs::current_path().parent_path()` |
+| anything else | used as-is |
+
+- If the resolved path does not exist, prints `"\nPath not found"` and pauses.
+
+#### `search_file()` helper
+ 
+```cpp
+bool search_file(const fs::path& path, const std::string& target, int& count);
+```
+ 
+- Uses `fs::recursive_directory_iterator` with `fs::directory_options::skip_permission_denied`.
+- Matches files whose `entry.path().filename() == target` (exact, case-sensitive).
+- Prints each matching path.
+- Increments `count` for each match.
+- Inner exceptions are swallowed via `catch (...)` — inaccessible subtrees are skipped silently.
+
+#### Results
+ 
+- If no match found: prints `"\nFile not found\n"`.
+- If matches found: prints `"\nFound N file(s)\n"`.
+- Always calls `show_success()` then `pause()` at the end (regardless of whether files were found).
+- **On outer `fs::filesystem_error`:** `show_error(e)` then `pause()`.
+
+---
+ 
+### 9. `edit [tool] [filename]` — Open File in External Editor
+ 
+**Source:** `src/edit.cpp`
+ 
+- **Argument check:** requires exactly 3 tokens. If not, prints `"\n\nUsage: edit [tool] [filename]"` and pauses.
+- **Existence check:** if `fs::exists(filename)` is false, throws `std::runtime_error("File not found")`.
+- **Command construction:** builds `tool "filename"` (wraps filename in double quotes) and runs it via `system()`.
+- **Exit code check:** if `system()` returns non-zero, throws `std::runtime_error("Failed to open file")`.
+- **On success:** `show_success()`.
+- **On `std::exception`:** `show_error(e)` then `pause()`.
+
+**Notes:**
+- `tool` must be available in the system `PATH` (e.g. `nano`, `vim`, `code`, `notepad`).
+- The filename is wrapped in double quotes in the constructed command, so filenames with spaces work correctly — provided `tool` also supports quoted arguments.
+- FM's own `split()` strips outer quotes before this point, so `edit "nano" "my file.txt"` passes `nano` and `my file.txt` as separate clean arguments.
+
+---
+ 
+### 10. `info [path]` — File/Folder Information
  
 **Source:** `src/info.cpp`
  
@@ -180,25 +289,29 @@ Called at the start of every main loop iteration and inside `cmd_info` and `cmd_
 - **Display:** calls `clear_screen()` then prints `"==== INFO ===="` followed by:
   - **Name:** `p.filename().string()`
   - **Path:** `fs::absolute(p).string()`
+
 #### If `p` is a regular file
  
 - **Type:** `File`
 - **Extension:** `p.extension().string()` (includes dot; empty string if no extension)
 - **Size:** `fs::file_size(p)` in bytes
 - **Permission:** owner bits only (`owner_read`, `owner_write`, `owner_exec`), displayed as `r`/`w`/`x` or `-`. Group and other bits are not shown.
+
 #### If `p` is a directory
  
 - **Type:** `Folder`
 - **Total size:** recursive sum of `fs::file_size()` for all regular files via `fs::recursive_directory_iterator`. Per-entry exceptions are silently swallowed with `catch (...)`.
 - **Inside (1 level):** immediate children listed as `" - <filename>"` via `fs::directory_iterator`.
+
 #### Error handling
  
 - `fs::filesystem_error` in the try block: `show_error(e)` → `pause()` → `return`. The final unconditional `pause()` is not reached on error.
 - Symlinks are followed (`fs::status`, not `fs::symlink_status`).
 - Special files (sockets, FIFOs, devices) fall through both `is_regular_file` and `is_directory` checks, showing only Name and Path.
+
 ---
  
-### 7. `ls [path]` — List Directory
+### 11. `ls [path]` — List Directory
  
 **Source:** `src/ls.cpp`
  
@@ -207,6 +320,7 @@ Called at the start of every main loop iteration and inside `cmd_info` and `cmd_
   - 2 tokens (`ls path`): target = given path.
   - 3+ tokens: prints `"\n\nUsage: ls [path]"`, pauses, and returns.
 - **Existence check:** if `fs::exists(target)` is false, prints `"\n\nError: path not found"`, pauses, and returns.
+
 #### If target is a regular file
  
 ```cpp
@@ -225,50 +339,7 @@ Displays the file as a single `[FILE]` entry instead of throwing a `filesystem_e
 - Prints `"\nListing: <absolute path>\n\n"`.
 - Iterates `fs::directory_iterator(target)`, printing `"[DIR] "` or `"[FILE] "` followed by the filename.
 - **On `fs::filesystem_error`:** `show_error(e)` → `pause()` → `return`.
----
- 
-### 8. `mv [source] [destination]` — Move/Rename
- 
-**Source:** `src/mv.cpp`
- 
-- **Argument check:** requires exactly 3 tokens. If not, prints `"\n\nUsage: mv [source] [destination]"` and pauses.
-- **Operation:** `fs::rename(args[1], args[2])`.
-- **On success:** `show_success()`.
-- **On `fs::filesystem_error`:** `show_error(e)` then `pause()`.
----
- 
-### 9. `cat [filename]` — Display File Contents
- 
-**Source:** `src/cat.cpp`
- 
-- **Argument check:** requires exactly 2 tokens. If not, prints `"\n\nUsage: cat [filename]"` and pauses.
-- Opens `args[1]` with `std::ifstream` and prints each line to the screen.
-- **On failure:** throws `runtime_error("Could not open file")`; `show_error(e)` then `pause()`.
----
- 
-### 10. `find [path] [filename]` — Search Files
- 
-**Source:** `src/find.cpp`
- 
-- **Argument check:** requires exactly 3 tokens. If not, prints `"\n\nUsage: find [path] [filename]"` and pauses.
-- If `args[1]` is `/`, searches the root filesystem.
-- Otherwise resolves `.` to current path or `..` to parent path, or uses the provided path.
-- Uses `fs::recursive_directory_iterator` with `skip_permission_denied` to locate files whose filename exactly matches the target.
-- Prints any matching paths and the total count.
-- **On path not found:** prints `"\nPath not found"` and pauses.
-- **On `fs::filesystem_error`:** `show_error(e)` then `pause()`.
----
- 
-### 11. `edit [tool] [filename]` — Open File in External Editor
- 
-**Source:** `src/edit.cpp`
- 
-- **Argument check:** requires exactly 3 tokens. If not, prints `"\n\nUsage: edit [tool] [filename]"` and pauses.
-- Checks that `filename` exists before launching the editor.
-- Builds `tool "filename"` and runs it with `system()`.
-- If the editor command exits with a non-zero status, throws `runtime_error("Failed to open file")`.
-- **On success:** `show_success()`.
-- **On failure:** `show_error(e)` then `pause()`.
+
 ---
  
 ### 12. `pwd` — Print Working Directory
@@ -278,14 +349,15 @@ Displays the file as a single `[FILE]` entry instead of throwing a `filesystem_e
 - No argument check; extra tokens after `pwd` are silently ignored (the function takes no parameters).
 - Prints `"\n\ncurrent path: " << fs::current_path() << "\n\n"`.
 - Calls `pause()`.
+
 ---
  
 ### 13. `oscmd [command]` — Run OS Command
  
 **Source:** `src/oscmd.cpp`
  
-- **Argument check:** requires exactly 2 tokens. If not, prints `"\n\nUsage: oscmd [command]"`, pauses, and **returns** (bug in previous version where `return` was missing has been fixed).
-- **Self-launch guard:** blocks `"fm"`, `"./fm"`, and `"fm.exe"`. Prints `"\n\ncannot launch fm inside fm"`, pauses, and **returns** (bug in previous version where `return` was missing has been fixed).
+- **Argument check:** requires exactly 2 tokens. If not, prints `"\n\nUsage: oscmd [command]"`, pauses, and **returns**.
+- **Self-launch guard:** blocks `"fm"`, `"./fm"`, and `"fm.exe"`. Prints `"\n\ncannot launch fm inside fm"`, pauses, and **returns**.
 - **Confirmation prompt:**
 ```cpp
   std::cin >> conti;
@@ -294,52 +366,53 @@ Displays the file as a single `[FILE]` entry instead of throwing a `filesystem_e
 - **Execution:** `std::system(args[1].c_str())`.
   - FM's `split()` strips the quote characters before this point, so `oscmd 'pkg install git'` passes `pkg install git` (no quotes) to the system shell.
   - The exit code from `std::system` is **not checked**; `show_success()` is always called.
+
 **Security notes:**
 - `std::system` spawns the OS default shell — any command the current user can run in the terminal can be run here.
 - `cd` inside `oscmd` runs in a child process and has **no effect** on FM's own working directory.
 - The self-launch guard only matches the three hardcoded strings; other paths to the binary (e.g. `../fm`, `/usr/bin/fm`) are not blocked.
 - The use of `std::cin >>` for the confirmation prompt (rather than `getline`) may leave a newline in the input buffer, which `std::ws` in subsequent `pause()` calls will consume.
+
 ---
  
-### 10. `help` — Detailed Help Screen
+### 14. `help` — Detailed Help Screen
  
 **Source:** `src/help.cpp`
  
-- Calls `clear_screen()`, then prints a large raw string literal (`R"(...)"`) containing numbered descriptions (1–9) for every command: `cp`, `rn`, `rm`, `cd`, `mk`, `info`, `ls`, `pwd`, `oscmd`.
+- Calls `clear_screen()`, then prints a large raw string literal (`R"(...)"`) containing numbered descriptions (1–14) for every command: `cp`, `rn`, `mv`, `rm`, `cd`, `mk`, `info`, `ls`, `cat`, `find`, `edit`, `pwd`, `oscmd`, `help`.
 - Each entry includes **Syntax**, **Example**, and **Output** sections.
-- **Known artifact:** the `mk` example line contains a stray `"Program"` prefix:
-```
-         Program  - mk file src.cpp
-```
-  This is a copy-paste leftover with no functional effect.
 - The help text is a hardcoded string — any new command added to the dispatcher must also be manually added here.
+
 ---
  
-### 11. `exit` — Quit
+### 15. `exit` — Quit
  
 **Source:** `main.cpp` (dispatcher)
  
 - Checked first in the main loop dispatcher with a standalone `if` (not part of the `else if` chain).
 - Breaks out of the `while (true)` loop. `main()` returns `0`.
 - No confirmation, no cleanup.
+
 ---
  
-### 12. Unknown Commands
+### 16. Unknown Commands
  
 **Source:** `main.cpp` (dispatcher)
  
 - Any `args[0]` not matching a known command prints `"\n\nUnknown command"` and calls `pause()`.
 - Matching is exact and case-sensitive.
+
 ---
  
 ## Building (Multi-file)
  
 **Linux / macOS**
 ```bash
-g++ -std=c++17 -o fm main.cpp src/utils.cpp src/cp.cpp src/rn.cpp src/rm.cpp src/cd.cpp src/mk.cpp src/info.cpp src/ls.cpp src/pwd.cpp src/oscmd.cpp src/mv.cpp src/cat.cpp src/find.cpp src/edit.cpp src/help.cpp
+g++ -std=c++17 -o fm main.cpp src/utils.cpp src/cp.cpp src/rn.cpp src/rm.cpp src/mv.cpp src/cd.cpp src/mk.cpp src/cat.cpp src/find.cpp src/edit.cpp src/info.cpp src/ls.cpp src/pwd.cpp src/oscmd.cpp src/help.cpp
 ```
  
 **Windows**
 ```bash
-g++ -std=c++17 -o fm.exe main.cpp src/utils.cpp src/cp.cpp src/rn.cpp src/rm.cpp src/cd.cpp src/mk.cpp src/info.cpp src/ls.cpp src/pwd.cpp src/oscmd.cpp src/mv.cpp src/cat.cpp src/find.cpp src/edit.cpp src/help.cpp
+g++ -std=c++17 -o fm.exe main.cpp src/utils.cpp src/cp.cpp src/rn.cpp src/rm.cpp src/mv.cpp src/cd.cpp src/mk.cpp src/cat.cpp src/find.cpp src/edit.cpp src/info.cpp src/ls.cpp src/pwd.cpp src/oscmd.cpp src/help.cpp
 ```
+EOF

@@ -16,14 +16,8 @@ void home() {
 
     fs::path path = ".";
 
-    std::vector<fs::path> file_list;
-
-    int pointer = 0;
-
     try {
         for (const auto& entry : fs::directory_iterator(path)) {
-
-            file_list.push_back(entry);
 
             // Show item type
             if (entry.is_directory()) {

@@ -227,7 +227,51 @@ Displays the file as a single `[FILE]` entry instead of throwing a `filesystem_e
 - **On `fs::filesystem_error`:** `show_error(e)` → `pause()` → `return`.
 ---
  
-### 8. `pwd` — Print Working Directory
+### 8. `mv [source] [destination]` — Move/Rename
+ 
+**Source:** `src/mv.cpp`
+ 
+- **Argument check:** requires exactly 3 tokens. If not, prints `"\n\nUsage: mv [source] [destination]"` and pauses.
+- **Operation:** `fs::rename(args[1], args[2])`.
+- **On success:** `show_success()`.
+- **On `fs::filesystem_error`:** `show_error(e)` then `pause()`.
+---
+ 
+### 9. `cat [filename]` — Display File Contents
+ 
+**Source:** `src/cat.cpp`
+ 
+- **Argument check:** requires exactly 2 tokens. If not, prints `"\n\nUsage: cat [filename]"` and pauses.
+- Opens `args[1]` with `std::ifstream` and prints each line to the screen.
+- **On failure:** throws `runtime_error("Could not open file")`; `show_error(e)` then `pause()`.
+---
+ 
+### 10. `find [path] [filename]` — Search Files
+ 
+**Source:** `src/find.cpp`
+ 
+- **Argument check:** requires exactly 3 tokens. If not, prints `"\n\nUsage: find [path] [filename]"` and pauses.
+- If `args[1]` is `/`, searches the root filesystem.
+- Otherwise resolves `.` to current path or `..` to parent path, or uses the provided path.
+- Uses `fs::recursive_directory_iterator` with `skip_permission_denied` to locate files whose filename exactly matches the target.
+- Prints any matching paths and the total count.
+- **On path not found:** prints `"\nPath not found"` and pauses.
+- **On `fs::filesystem_error`:** `show_error(e)` then `pause()`.
+---
+ 
+### 11. `edit [tool] [filename]` — Open File in External Editor
+ 
+**Source:** `src/edit.cpp`
+ 
+- **Argument check:** requires exactly 3 tokens. If not, prints `"\n\nUsage: edit [tool] [filename]"` and pauses.
+- Checks that `filename` exists before launching the editor.
+- Builds `tool "filename"` and runs it with `system()`.
+- If the editor command exits with a non-zero status, throws `runtime_error("Failed to open file")`.
+- **On success:** `show_success()`.
+- **On failure:** `show_error(e)` then `pause()`.
+---
+ 
+### 12. `pwd` — Print Working Directory
  
 **Source:** `src/pwd.cpp`
  
@@ -236,7 +280,7 @@ Displays the file as a single `[FILE]` entry instead of throwing a `filesystem_e
 - Calls `pause()`.
 ---
  
-### 9. `oscmd [command]` — Run OS Command
+### 13. `oscmd [command]` — Run OS Command
  
 **Source:** `src/oscmd.cpp`
  
@@ -292,10 +336,10 @@ Displays the file as a single `[FILE]` entry instead of throwing a `filesystem_e
  
 **Linux / macOS**
 ```bash
-g++ -std=c++17 -o fm main.cpp src/utils.cpp src/cp.cpp src/rn.cpp src/rm.cpp src/cd.cpp src/mk.cpp src/info.cpp src/ls.cpp src/pwd.cpp src/oscmd.cpp src/help.cpp
+g++ -std=c++17 -o fm main.cpp src/utils.cpp src/cp.cpp src/rn.cpp src/rm.cpp src/cd.cpp src/mk.cpp src/info.cpp src/ls.cpp src/pwd.cpp src/oscmd.cpp src/mv.cpp src/cat.cpp src/find.cpp src/edit.cpp src/help.cpp
 ```
  
 **Windows**
 ```bash
-g++ -std=c++17 -o fm.exe main.cpp src/utils.cpp src/cp.cpp src/rn.cpp src/rm.cpp src/cd.cpp src/mk.cpp src/info.cpp src/ls.cpp src/pwd.cpp src/oscmd.cpp src/help.cpp
+g++ -std=c++17 -o fm.exe main.cpp src/utils.cpp src/cp.cpp src/rn.cpp src/rm.cpp src/cd.cpp src/mk.cpp src/info.cpp src/ls.cpp src/pwd.cpp src/oscmd.cpp src/mv.cpp src/cat.cpp src/find.cpp src/edit.cpp src/help.cpp
 ```

@@ -10,6 +10,10 @@ FM is a lightweight, terminal-based file manager written in C++ using `std::file
 - Rename files or directories (`rn`)
 - Change directory (`cd`)
 - Create new files or directories (`mk`)
+- Rename or move files and directories (`rn`, `mv`)
+- View file contents (`cat`)
+- Search for files recursively by name (`find`)
+- Open a file with an external editor (`edit`)
 - View detailed information about a file or folder (`info`)
 - List contents of a directory or inspect a single file (`ls`)
 - Print the current working directory (`pwd`)
@@ -40,6 +44,10 @@ fm/
     ├── ls.cpp
     ├── pwd.cpp
     ├── oscmd.cpp
+    ├── mv.cpp
+    ├── cat.cpp
+    ├── find.cpp
+    ├── edit.cpp
     └── help.cpp
 ```
  
@@ -47,18 +55,18 @@ fm/
  
 **Linux / macOS**
 ```bash
-g++ -std=c++17 -o fm main.cpp src/utils.cpp src/cp.cpp src/rn.cpp src/rm.cpp src/cd.cpp src/mk.cpp src/info.cpp src/ls.cpp src/pwd.cpp src/oscmd.cpp src/help.cpp
+g++ -std=c++17 -o fm main.cpp src/utils.cpp src/cp.cpp src/rn.cpp src/rm.cpp src/cd.cpp src/mk.cpp src/info.cpp src/ls.cpp src/pwd.cpp src/oscmd.cpp src/mv.cpp src/cat.cpp src/find.cpp src/edit.cpp src/help.cpp
 ```
  
 **Windows**
 ```bash
-g++ -std=c++17 -o fm.exe main.cpp src/utils.cpp src/cp.cpp src/rn.cpp src/rm.cpp src/cd.cpp src/mk.cpp src/info.cpp src/ls.cpp src/pwd.cpp src/oscmd.cpp src/help.cpp
+g++ -std=c++17 -o fm.exe main.cpp src/utils.cpp src/cp.cpp src/rn.cpp src/rm.cpp src/cd.cpp src/mk.cpp src/info.cpp src/ls.cpp src/pwd.cpp src/oscmd.cpp src/mv.cpp src/cat.cpp src/find.cpp src/edit.cpp src/help.cpp
 ```
  
 **Termux (Android)**
 ```bash
 pkg install clang
-clang++ -std=c++17 -o fm main.cpp src/utils.cpp src/cp.cpp src/rn.cpp src/rm.cpp src/cd.cpp src/mk.cpp src/info.cpp src/ls.cpp src/pwd.cpp src/oscmd.cpp src/help.cpp
+clang++ -std=c++17 -o fm main.cpp src/utils.cpp src/cp.cpp src/rn.cpp src/rm.cpp src/cd.cpp src/mk.cpp src/info.cpp src/ls.cpp src/pwd.cpp src/oscmd.cpp src/mv.cpp src/cat.cpp src/find.cpp src/edit.cpp src/help.cpp
 ```
  
 ## Running `fm` From Anywhere
@@ -136,8 +144,11 @@ You will see the current directory and its contents, followed by a command promp
 |---|---|
 | `help` | Show detailed help with syntax and examples for all commands |
 | `cp [from] [to]` | Copy a file or directory (recursive, overwrites existing) |
-| `rm [file/dir]` | Remove a file or directory (asks for confirmation) |
 | `rn [oldname] [newname]` | Rename a file or directory |
+| `mv [source] [destination]` | Move or rename a file or directory |
+| `cat [filename]` | Display the contents of a text file |
+| `find [path] [filename]` | Search recursively for files by name |
+| `edit [tool] [filename]` | Open a file with an external editor tool |
 | `cd [path]` | Change the current directory |
 | `mk file [name]` | Create a new empty file |
 | `mk dir [name]` | Create a new directory (including intermediate directories) |

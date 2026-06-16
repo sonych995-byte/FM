@@ -41,6 +41,9 @@ int main() {
         else if (args[0] == "rn") {
             cmd_rn(args);
         }
+        else if (args[0] == "mv") {
+            cmd_mv(args);
+        }
         else if (args[0] == "rm") {
             cmd_rm(args);
         }
@@ -55,6 +58,15 @@ int main() {
         }
         else if (args[0] == "ls") {
             cmd_ls(args);
+        }
+        else if (args[0] == "cat") {
+            cmd_cat(args);
+        }
+        else if (args[0] == "find") {
+            cmd_find(args);
+        }
+        else if (args[0] == "edit") {
+            cmd_edit(args);
         }
         else if (args[0] == "pwd") {
             cmd_pwd();

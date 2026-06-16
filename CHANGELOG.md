@@ -1,7 +1,30 @@
 # Changelog
- 
+
+## v.0.6.0-alpha
+
+### Added
+- New `mv [source] [destination]` command to move or rename files and directories (`src/mv.cpp`, `cmd_mv()`)
+- New `cat [filename]` command to display the contents of a text file (`src/cat.cpp`, `cmd_cat()`)
+- New `find [path] [filename]` command to recursively search for files by name (`src/find.cpp`, `cmd_find()`, `search_file()`)
+  - Supports `.` (current directory) and `..` (parent directory) as search path shortcuts
+  - `/` searches the entire filesystem (all drives on Windows, root on Unix/macOS)
+  - Uses `fs::directory_options::skip_permission_denied` to skip inaccessible directories without crashing
+  - Reports total count of matched files at the end of the search
+- New `edit [tool] [filename]` command to open a file in an external editor (`src/edit.cpp`, `cmd_edit()`)
+  - Checks file existence before launching the editor
+  - Checks the editor exit code and throws `runtime_error("Failed to open file")` on non-zero result
+- Updated `src/help.cpp` help screen to include all new commands (`mv`, `cat`, `find`, `edit`) with syntax, examples, and output descriptions (commands now numbered 1–14)
+- `mv`, `cat`, `find`, and `edit` added to `include/commands.hpp` declarations
+- `mv`, `cat`, `find`, and `edit` added to the command dispatcher in `main.cpp`
+
+### Changed
+- `COMMAND.md` updated with full in-depth documentation for `mv`, `cat`, `find`, and `edit`
+- `README.md` updated: Features list, Available Commands table, and Project Structure now reflect all new commands and source files
+
+---
+
 ## v.0.5.0-alpha
- 
+
 ### Changed
 - Refactored entire project from a single `main.cpp` into a multi-file structure:
   - `src/utils.cpp` — utility functions (`home`, `split`, `pause`, `show_success`, `show_fail`, `show_error`, `clear_screen`)
@@ -13,8 +36,9 @@
 - `main.cpp` is now minimal: only the main loop, `split()` call, and command dispatcher remain
 - `exit` is now checked first in the dispatcher (before all other commands) with a standalone `if` instead of being embedded at the end of the `if/else if` chain
 - Dispatcher reformatted from `} else if {` to `else if {` on a new line for consistency
+
 ## v.0.4.1-alpha
- 
+
 ### Added
 - `clear_screen()` utility function that calls `cls` on Windows and `clear` on other platforms via preprocessor (`#ifdef _WIN32`), replacing all hardcoded `\033[2J\033[H` ANSI escape sequences
 - `cmd_cp` now uses `fs::equivalent()` to detect when `from` and `to` refer to the same file via different paths (e.g. symlinks or different relative/absolute forms), not just string equality
@@ -36,8 +60,9 @@
 - `cmd_info`: double-pause on error path
 - `cmd_ls`: double-pause on error path
 - `cmd_ls`: calling `ls` on a regular file no longer throws a `filesystem_error`
+
 ## v.0.4.0-alpha
- 
+
 ### Added
 - New `oscmd [command]` command to run operating system commands via `std::system`, with a confirmation prompt
 - Single-quote support in command parsing (in addition to double quotes)
@@ -46,8 +71,9 @@
 ### Changed
 - `split()` rewritten to track double-quote and single-quote state separately, throwing distinct errors for unmatched quotes
 - `help` command now calls `cmd_help()` and shows a full reference screen
+
 ## v.0.3.0-alpha
- 
+
 ### Added
 - New `ls [path]` command to list contents of a directory (defaults to current path if no argument given)
 - New `pwd` command to print the current working directory
@@ -55,8 +81,9 @@
 ### Changed
 - Main loop now clears the screen explicitly before calling `home()`
 - Fixed typo "Unknown commamd" -> "Unknown command"
+
 ## v.0.2.0-alpha
- 
+
 ### Added
 - New `info [path]` command to display detailed information about a file or folder:
   - Name, absolute path, and type (File/Folder)
@@ -68,8 +95,9 @@
 - `pause()` message changed from "Press Enter to continue" to "Press any button and enter to continue"
 - Restored the `command: ` prompt before reading input in the main loop
 - General code cleanup and formatting
+
 ## v.0.1.2-alpha
- 
+
 ### Added
 - Quoted argument support in command parsing (e.g. `mk file "my file.txt"`), allowing names with spaces
 - Confirmation prompt (`Continue? [Y/n]`) before `rm` deletes a file or folder
@@ -85,8 +113,9 @@
 ### Fixed
 - Input handling using `std::getline` now properly skips leading whitespace (`std::cin >> std::ws`)
 - Inconsistent spacing/newlines in status and usage messages
+
 ## v.0.1.0
- 
+
 ### Added
 - Basic interactive file manager shell
 - `cp [from] [to]` — copy files/directories recursively, overwrite existing
@@ -96,3 +125,4 @@
 - `help` — show list of available commands
 - `exit` — quit the program
 - Directory listing on startup with `[DIR]` / `[FILE]` prefixes
+EOF

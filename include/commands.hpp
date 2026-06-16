@@ -10,6 +10,10 @@ void cmd_mk(const std::vector<std::string>& args);
 void cmd_info(const std::vector<std::string>& args);
 void cmd_ls(const std::vector<std::string>& args);
 void cmd_oscmd(const std::vector<std::string>& args);
+void cmd_mv(const std::vector<std::string>& args);
+void cmd_cat(const std::vector<std::string>& args);
+void cmd_find(const std::vector<std::string>& args);
+
 
 void cmd_pwd();
 void cmd_help();

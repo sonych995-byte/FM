@@ -1,0 +1,47 @@
+name: FM CI
+
+on:
+  push:
+    branches: ["main"]
+
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install compiler
+        run: sudo apt update && sudo apt install -y g++
+
+      - name: Build FM
+        run: |
+          g++ -std=c++17 \
+          -o fm \
+          main.cpp \
+          src/utils.cpp \
+          src/cp.cpp \
+          src/rn.cpp \
+          src/rm.cpp \
+          src/mv.cpp \
+          src/cd.cpp \
+          src/mk.cpp \
+          src/cat.cpp \
+          src/find.cpp \
+          src/edit.cpp \
+          src/info.cpp \
+          src/ls.cpp \
+          src/pwd.cpp \
+          src/oscmd.cpp \
+          src/help.cpp
+
+      - name: Verify executable
+        run: |
+          test -f fm
+          echo "Build successful"

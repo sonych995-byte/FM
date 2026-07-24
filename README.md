@@ -1,195 +1,169 @@
-# FM - Simple Command-Line File Manager
- 
-FM is a lightweight, terminal-based file manager written in C++ using `std::filesystem`. It provides a simple interactive shell for browsing directories and performing basic file operations.
- 
+# FM
+
+FM is a local web-based file manager. The browser interface is served by
+Flask, while the file operations are implemented in C++17. `run.py` starts
+the Flask server and launches the C++ core; both processes communicate through
+request and response files in the `runtime/` directory.
+
 ## Features
- 
-- Display current directory contents (files and folders)
-- Copy files or directories (`cp`)
-- Remove files or directories with confirmation (`rm`)
-- Rename files or directories (`rn`)
-- Move files or directories (`mv`)
-- Change directory (`cd`)
-- Create new files or directories (`mk`)
-- View file contents (`cat`)
-- Search for files recursively by name (`find`)
-- Open a file with an external editor (`edit`)
-- View detailed information about a file or folder (`info`)
-- List contents of a directory or inspect a single file (`ls`)
-- Print the current working directory (`pwd`)
-- Run operating system commands with confirmation (`oscmd`)
-- Quoted argument support (double and single quotes) for names and commands containing spaces
-- Cross-platform screen clearing (Windows `cls` / Unix `clear`)
-- Detailed built-in help command with syntax, examples, and output for every command
+
+- Browse files and directories in a browser
+- Copy, move, rename, and remove files or directories
+- Create files and directories
+- View file contents and file metadata
+- Search recursively by filename
+- Open files with an external editor
+- Run supported FM commands from the command composer
+- Use quoted paths containing spaces
 
 ## Requirements
- 
-- A C++17 (or later) compatible compiler (e.g. g++, clang++)
+
+- Python 3.9 or newer
+- A C++17-compatible compiler, such as `g++` or `clang++`
+- Flask
+- A browser and `xdg-open` on Linux, or the platform equivalent
 
 ## Project Structure
- 
+
 ```
-fm/
-├── main.cpp
-├── include/
-│   ├── common.hpp
-│   ├── utils.hpp
-│   └── commands.hpp
-└── src/
-    ├── utils.cpp
-    ├── cp.cpp
-    ├── rn.cpp
-    ├── rm.cpp
-    ├── mv.cpp
-    ├── cd.cpp
-    ├── mk.cpp
-    ├── cat.cpp
-    ├── find.cpp
-    ├── edit.cpp
-    ├── info.cpp
-    ├── ls.cpp
-    ├── pwd.cpp
-    ├── oscmd.cpp
-    └── help.cpp
+FM/
+├── main.cpp                 C++ core entry point
+├── run.py                   Flask server and core launcher
+├── Bridge.py                Python side of the file bridge
+├── templates/
+│   └── fm-gui.html          Browser interface
+└── CORE/
+    ├── include/
+    │   ├── Bridge.hpp
+    │   ├── commands.hpp
+    │   ├── common.hpp
+    │   └── utils.hpp
+    └── src/
+        ├── cat.cpp
+        ├── cd.cpp
+        ├── cp.cpp
+        ├── edit.cpp
+        ├── find.cpp
+        ├── help.cpp
+        ├── info.cpp
+        ├── ls.cpp
+        ├── mk.cpp
+        ├── mv.cpp
+        ├── oscmd.cpp
+        ├── pwd.cpp
+        ├── rm.cpp
+        ├── rn.cpp
+        └── utils.cpp
 ```
- 
-## Building
- 
-**Linux / macOS**
+
+## Setup
+
+Create a virtual environment and install the Python dependency:
+
 ```bash
-g++ -std=c++17 -o fm main.cpp src/utils.cpp src/cp.cpp src/rn.cpp src/rm.cpp src/mv.cpp src/cd.cpp src/mk.cpp src/cat.cpp src/find.cpp src/edit.cpp src/info.cpp src/ls.cpp src/pwd.cpp src/oscmd.cpp src/help.cpp
+python3 -m venv .venv
+source .venv/bin/activate
+pip install Flask
 ```
- 
-**Windows**
+
+On Windows, activate the environment with:
+
+```powershell
+.venv\Scripts\Activate.ps1
+```
+
+## Build
+
+Build the C++ core from the repository root. The output must be named `core`
+(`core.exe` on Windows), because that is the filename used by `run.py`.
+
+### Linux / macOS
+
 ```bash
-g++ -std=c++17 -o fm.exe main.cpp src/utils.cpp src/cp.cpp src/rn.cpp src/rm.cpp src/mv.cpp src/cd.cpp src/mk.cpp src/cat.cpp src/find.cpp src/edit.cpp src/info.cpp src/ls.cpp src/pwd.cpp src/oscmd.cpp src/help.cpp
+g++ -std=c++17 -pthread -I. -o core \
+  main.cpp \
+  CORE/src/utils.cpp CORE/src/cp.cpp CORE/src/rn.cpp CORE/src/rm.cpp \
+  CORE/src/mv.cpp CORE/src/cd.cpp CORE/src/mk.cpp CORE/src/cat.cpp \
+  CORE/src/find.cpp CORE/src/edit.cpp CORE/src/info.cpp CORE/src/ls.cpp \
+  CORE/src/pwd.cpp CORE/src/oscmd.cpp CORE/src/help.cpp
 ```
- 
-**Termux (Android)**
-```bash
-pkg install clang
-clang++ -std=c++17 -o fm main.cpp src/utils.cpp src/cp.cpp src/rn.cpp src/rm.cpp src/mv.cpp src/cd.cpp src/mk.cpp src/cat.cpp src/find.cpp src/edit.cpp src/info.cpp src/ls.cpp src/pwd.cpp src/oscmd.cpp src/help.cpp
-```
- 
-## Running `fm` From Anywhere
- 
-After building the binary, you can install it so the `fm` command works in any directory, without typing `./fm` or the full path.
- 
-### Linux / macOS / WSL
- 
-Move the compiled binary to a directory that's already in your `PATH`, such as `/usr/local/bin`:
- 
-```bash
-sudo mv fm /usr/local/bin/fm
-sudo chmod +x /usr/local/bin/fm
-```
- 
-Now you can run `fm` from any folder:
- 
-```bash
-fm
-```
- 
-Alternatively, without `sudo`, create a personal bin folder and add it to `PATH`:
- 
-```bash
-mkdir -p ~/bin
-mv fm ~/bin/fm
-echo 'export PATH="$HOME/bin:$PATH"' >> ~/.bashrc   # or ~/.zshrc on macOS
-source ~/.bashrc
-```
- 
-### Termux (Android)
- 
-Termux already has `$PREFIX/bin` in `PATH`, so just move the binary there:
- 
-```bash
-mv fm $PREFIX/bin/fm
-chmod +x $PREFIX/bin/fm
-```
- 
-Then run from anywhere with:
- 
-```bash
-fm
-```
- 
+
 ### Windows
- 
-1. Build `fm.exe` as shown above.
-2. Create a folder for your tools, e.g. `C:\tools`, and copy `fm.exe` into it.
-3. Add that folder to your `PATH`:
-   - Press `Win + R`, type `sysdm.cpl`, press Enter.
-   - Go to **Advanced** → **Environment Variables**.
-   - Under **User variables**, select `Path` → **Edit** → **New**, then add `C:\tools`.
-   - Click OK on all dialogs.
-4. Open a new Command Prompt / PowerShell window and run:
-```bash
-fm
+
+```powershell
+g++ -std=c++17 -pthread -I. -o core.exe `
+  main.cpp `
+  CORE/src/utils.cpp CORE/src/cp.cpp CORE/src/rn.cpp CORE/src/rm.cpp `
+  CORE/src/mv.cpp CORE/src/cd.cpp CORE/src/mk.cpp CORE/src/cat.cpp `
+  CORE/src/find.cpp CORE/src/edit.cpp CORE/src/info.cpp CORE/src/ls.cpp `
+  CORE/src/pwd.cpp CORE/src/oscmd.cpp CORE/src/help.cpp
 ```
- 
-> Tip: Verify the install by running `fm` from any directory (e.g. your Desktop). If the file manager starts up, the installation worked correctly.
- 
-## Usage
- 
-Run the compiled program:
- 
+
+Use the compiler's normal source-file separator for your shell if the
+PowerShell command above is not supported by the installed toolchain.
+
+## Run
+
+Start the application from the repository root:
+
 ```bash
-./fm
+python3 run.py
 ```
- 
-You will see the current directory and its contents, followed by a command prompt.
- 
-### Available Commands
- 
+
+Open [http://127.0.0.1:5000](http://127.0.0.1:5000) in a browser if it does
+not open automatically. The server is bound to localhost only.
+
+The first run creates `runtime/`, which is used for request and response
+files between Flask and the C++ core. Do not run multiple instances from the
+same directory, because they would share this bridge directory.
+
+Stop the application with `Ctrl+C`. `run.py` terminates the core process when
+the Python process exits normally.
+
+## Command Reference
+
+The web interface sends the following command forms to the C++ core:
+
 | Command | Description |
 |---|---|
-| `help` | Show detailed help with syntax and examples for all commands |
-| `cp [from] [to]` | Copy a file or directory (recursive, overwrites existing) |
+| `help` | Show the available commands |
+| `cp [from] [to]` | Copy a file or directory |
 | `rn [oldname] [newname]` | Rename a file or directory |
-| `mv [source] [destination]` | Move or rename a file or directory |
-| `rm [file/folder]` | Remove a file or directory (asks for confirmation) |
-| `cat [filename]` | Display the contents of a text file |
-| `find [path] [filename]` | Search recursively for files by name |
-| `edit [tool] [filename]` | Open a file with an external editor tool |
+| `mv [source] [destination]` | Move a file or directory |
+| `rm [file/folder]` | Remove a file or directory |
 | `cd [path]` | Change the current directory |
-| `mk file [name]` | Create a new empty file |
-| `mk dir [name]` | Create a new directory (including intermediate directories) |
-| `info [path]` | Show details about a file or folder (size, type, permissions, contents) |
-| `ls [path]` | List contents of a directory, or inspect a single file (current directory if no path given) |
+| `mk file [name]` | Create an empty file |
+| `mk dir [name]` | Create a directory and missing parents |
+| `cat [filename]` | Display a file's contents |
+| `find [path] [filename]` | Search recursively by filename |
+| `edit [tool] [filename]` | Open a file with an external editor |
+| `info [path]` | Show file or directory information |
+| `ls [path]` | List a directory or inspect a file |
 | `pwd` | Print the current working directory |
-| `oscmd [command]` | Run an OS command (asks for confirmation; some commands can be dangerous) |
-| `exit` | Exit the program |
- 
-Names containing spaces can be wrapped in double or single quotes, e.g. `mk file "my file.txt"` or `oscmd 'pkg install git'`.
- 
-## Example
- 
-```
-=========================
- 
-file manager
- 
-=========================
- 
-current path: /home/user/project
- 
-Files:
-[DIR] src
-[FILE] main.cpp
-[FILE] README.md
- 
-command: info main.cpp
-```
- 
-## Notes
- 
-- `oscmd` executes raw OS commands via `std::system` and prompts for confirmation before running. Running `fm`, `./fm`, or `fm.exe` through `oscmd` is blocked to prevent recursive launching.
-- Screen clearing works cross-platform: `cls` on Windows, `clear` on Linux/macOS.
-- `find /` searches the entire filesystem (all drives on Windows, root on Unix/macOS). Use with caution on large systems.
-- `edit` requires an external editor tool (e.g. `nano`, `vim`, `code`) to be available in your `PATH`.
+| `oscmd [command]` | Run an operating-system command after confirmation |
+| `exit` | Stop the C++ core |
+
+Arguments containing spaces can be wrapped in single or double quotes, for
+example `mk file "notes from work.txt"`.
+
+## Local API
+
+`run.py` exposes two localhost-only endpoints:
+
+- `GET /api/list?path=.` lists a path through the C++ core.
+- `POST /api/run` accepts a JSON body such as
+  `{ "command": "pwd" }`.
+
+The API is intended for the bundled interface and is not configured for
+remote access.
+
+## Current Development Status
+
+The Flask/browser interface and C++ bridge are operational. The C++ core can
+be built with the command above and the supported file-management commands can
+be run through the local API or the bundled GUI.
 
 ## License
- 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-EOF
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for
+details.

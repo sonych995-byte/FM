@@ -1,0 +1,26 @@
+# Virtual Environment
+.venv/
+venv/
+ENV/
+
+# Python Cache & Compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# C++ Build outputs & Object files
+*.o
+*.obj
+*.exe
+*.out
+*.app
+build/
+bin/
+cmake-build-*/
+
+# IDE & Editor settings (ออปชันเสริม)
+.vscode/
+.idea/
+*.swp
+*.DS_Store

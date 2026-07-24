@@ -1,6 +1,30 @@
 # Changelog
 
-## v.0.6.0-alpha
+## v0.7.0
+
+### Added
+- Flask web server in `run.py`, bound to `127.0.0.1:5000`
+- Browser-based file manager interface in `templates/fm-gui.html`
+- Python/C++ file bridge using JSON files in the `runtime/` directory
+- Local API endpoints for listing paths and running FM commands
+- `Bridge.py` for the Python side of the bridge and `CORE/include/Bridge.hpp` for the C++ side
+
+### Changed
+- Reworked the application entry point so `run.py` launches the Flask server and the `core` binary
+- Updated `main.cpp` to receive commands through the bridge and open the browser interface
+- Moved C++ headers and command implementations into `CORE/include/` and `CORE/src/`
+- Updated the expected C++ output name from `fm` to `core` (`core.exe` on Windows)
+- Added GUI and bridge setup/build/run instructions to `README.md`
+
+### Known Limitations
+- `oscmd` executes commands with the current user's operating-system
+  permissions; it does not grant administrator or root privileges
+- The bridge is intentionally local and uses one serialized request/response
+  channel per application instance
+
+---
+
+## v0.6.0-alpha
 
 ### Added
 - New `mv [source] [destination]` command to move or rename files and directories (`src/mv.cpp`, `cmd_mv()`)
@@ -125,4 +149,3 @@
 - `help` — show list of available commands
 - `exit` — quit the program
 - Directory listing on startup with `[DIR]` / `[FILE]` prefixes
-EOF

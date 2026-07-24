@@ -1,29 +1,24 @@
-#include "include/common.hpp"
-#include "include/utils.hpp"
-#include "include/commands.hpp"
+#include "CORE/include/common.hpp"
+#include "CORE/include/utils.hpp"
+#include "CORE/include/commands.hpp"
+#include <cstdlib>
+
+Bridge bridge;
+
+
 
 int main() {
 
     while (true) {
 
-        clear_screen();
-        home();
-
-        std::string input;
-
-        std::cout << "\ncommand: ";
-        std::getline(std::cin, input);
+        std::string input = bridge.receive("request");
 
         std::vector<std::string> args;
 
         try {
-
             args = split(input);
-
         } catch (const std::exception& e) {
-
-            show_error(e);
-            pause();
+            bridge.send(std::string("Error: ") + e.what(), "response");
             continue;
         }
 
@@ -79,8 +74,7 @@ int main() {
         }
         else {
 
-            std::cout << "\n\nUnknown command";
-            pause();
+            bridge.send("Invalid command", "response");
         }
     }
 

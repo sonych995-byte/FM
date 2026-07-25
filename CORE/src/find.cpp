@@ -34,25 +34,77 @@ bool search_file(
 }
 
 void cmd_find(const std::vector<std::string>& args) {
+
     if (args.size() != 3) {
         bridge.send("Usage: find [path] [name]", "response");
         return;
     }
+
     try {
-        const fs::path root = args[1] == "." ? fs::current_path() : fs::path(args[1]);
+
+        fs::path root = args[1] == "." 
+            ? fs::current_path() 
+            : fs::path(args[1]);
+
         if (!fs::exists(root)) {
             bridge.send("Error: Path does not exist", "response");
             return;
         }
+
         std::string output;
-        for (const auto& entry : fs::recursive_directory_iterator(
-                 root, fs::directory_options::skip_permission_denied)) {
-            if (entry.path().filename() == args[2]) {
-                output += entry.path().string() + "\n";
+
+        fs::recursive_directory_iterator it(
+            root,
+            fs::directory_options::skip_permission_denied
+        );
+
+        fs::recursive_directory_iterator end;
+
+
+        while (it != end) {
+
+            try {
+
+                auto status = fs::symlink_status(it->path());
+
+                // ไม่ตาม symlink
+                if (fs::is_symlink(status)) {
+                    ++it;
+                    continue;
+                }
+
+
+                if (it->path().filename() == args[2]) {
+
+                    output += it->path().string();
+                    output += "\n";
+
+                }
+
+                ++it;
+
+            }
+            catch (const fs::filesystem_error&) {
+
+                // ข้ามไฟล์ที่มีปัญหา
+                ++it;
             }
         }
-        bridge.send(output.empty() ? "No matches found" : output, "response");
-    } catch (const std::exception& e) {
-        bridge.send(std::string("Error: ") + e.what(), "response");
+
+
+        bridge.send(
+            output.empty() 
+            ? "No matches found" 
+            : output,
+            "response"
+        );
+
+    }
+    catch (const std::exception& e) {
+
+        bridge.send(
+            std::string("Error: ") + e.what(),
+            "response"
+        );
     }
 }

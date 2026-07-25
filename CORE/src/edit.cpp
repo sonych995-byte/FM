@@ -7,8 +7,8 @@ void cmd_edit(const std::vector<std::string>& args) {
     if (args.size() != 3) {
 
         bridge.send(
-            "response",
-            "Usage: edit [tool] [filename]"
+            "Usage: edit [tool] [filename]",
+            "response"
         );
 
         return;

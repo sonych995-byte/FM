@@ -494,7 +494,8 @@ const el = {
 /* ---------------------------- rendering: crumbs + grid ---------------------------- */
 function renderCrumbs(){
   const parts = state.path.split(/[\\/]/).filter(Boolean);
-  const isAbs = state.path.startsWith('/');
+  // ใหม่ — รองรับทั้ง /unix/path และ C:\windows\path
+  const isAbs = /^[/\\]/.test(state.path) || /^[A-Za-z]:[\\/]/.test(state.path);
   el.crumbs.innerHTML = '';
   const addCrumb = (label, target, isLast) => {
     const b = document.createElement('button');

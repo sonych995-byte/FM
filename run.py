@@ -128,17 +128,38 @@ def index():
 @app.route("/api/list")
 def api_list():
     path = request.args.get("path", ".")
+    quoted = path.replace(chr(34), chr(92) + chr(34))
+
+    # 1) Actually move core's real working directory to `path` first.
+    #    This makes core's cwd the single source of truth — GUI browsing
+    #    and a manually typed `cd` will now always agree on "where we are".
     try:
-        output = call_core(f'ls "{path.replace(chr(34), chr(92) + chr(34))}"')
+        cd_output = call_core(f'cd "{quoted}"')
     except TimeoutError:
         return jsonify({"ok": False, "output": "core did not respond"}), 504
+
+    if not cd_output.startswith("PATH:"):
+        # cd failed (bad path, permissions, etc.) — surface the real error
+        # instead of silently listing the wrong directory.
+        return jsonify({"ok": False, "output": cd_output}), 400
+
+    real_path = cd_output[len("PATH:"):]
+
+    # 2) Now list "." — core's cwd is guaranteed to be `real_path`.
+    try:
+        output = call_core("ls .")
+    except TimeoutError:
+        return jsonify({"ok": False, "output": "core did not respond"}), 504
+
     entries = []
     for line in output.splitlines():
         if line.startswith("[DIR] "):
             entries.append({"name": line[6:], "type": "dir"})
         elif line.startswith("[FILE] "):
             entries.append({"name": line[7:], "type": "file"})
-    return jsonify({"path": path, "entries": entries})
+
+    # Return the REAL absolute path core is now in, not the raw input path.
+    return jsonify({"path": real_path, "entries": entries})
 
 
 @app.route("/api/run", methods=["POST"])

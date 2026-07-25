@@ -6,16 +6,16 @@ void cmd_cp(const std::vector<std::string>& args) {
 
     if (args.size() != 3) {
         bridge.send(
-            "response",
-            "Usage: cp [source] [destination]"
+            "Usage: cp [source] [destination]",
+            "response"
         );
         return;
     }
 
     if (args[1] == args[2]) {
         bridge.send(
-            "response",
-            "Source and destination are the same"
+            "Source and destination are the same",
+            "response"
         );
         return;
     }

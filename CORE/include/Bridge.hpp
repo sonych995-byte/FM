@@ -8,6 +8,7 @@
 #include <chrono>
 #include <string>
 #include <stdexcept>
+#include <iostream>
 
 
 namespace fs = std::filesystem;
@@ -18,72 +19,127 @@ class Bridge
 
 private:
 
-    std::string runtime;
+    fs::path runtime;
 
 
 public:
 
     Bridge(
-        std::string folder = "runtime"
+        fs::path folder = "runtime"
     )
     {
+
         runtime = folder;
 
+
+        std::error_code ec;
+
         fs::create_directories(
-            runtime
+            runtime,
+            ec
         );
+
+
+        if(ec)
+        {
+            throw std::runtime_error(
+                "Cannot create bridge runtime: "
+                + ec.message()
+            );
+        }
+
+
+        std::cout
+            << "[BRIDGE] Runtime: "
+            << fs::absolute(runtime)
+            << std::endl;
+
     }
 
 
 
     void send(
-        std::string data,
-        std::string name
-    )
+    const std::string& data,
+    const std::string& name
+)
+{
+    fs::path json_file =
+        runtime / (name + ".json");
+
+
+    fs::path tmp_file =
+        runtime /
+        (
+            name + "_" +
+            std::to_string(
+                std::chrono::high_resolution_clock::now()
+                .time_since_epoch()
+                .count()
+            )
+            + ".tmp"
+        );
+
+
     {
-
-        std::string tmp_file =
-            runtime + "/" + name + ".tmp";
-
-
-        std::string json_file =
-            runtime + "/" + name + ".json";
+        std::ofstream out(
+            tmp_file,
+            std::ios::trunc
+        );
 
 
-
-        // เขียนไฟล์ชั่วคราว
-
-        std::ofstream out(tmp_file, std::ios::trunc);
-        if (!out) {
-            throw std::runtime_error("Unable to open bridge temporary file");
+        if(!out)
+        {
+            throw std::runtime_error(
+                "Unable to open bridge temporary file: "
+                + tmp_file.string()
+            );
         }
 
 
         out << data;
 
 
-        out.close();
+        out.flush();
 
-        if (!out) {
-            throw std::runtime_error("Unable to write bridge message");
+
+        if(!out)
+        {
+            throw std::runtime_error(
+                "Unable to write bridge message"
+            );
         }
-
-
-
-        // เปลี่ยนชื่อเมื่อเสร็จ
-
-        fs::remove(json_file);
-        fs::rename(tmp_file, json_file);
-
     }
 
 
+    std::error_code ec;
 
-    std::string receive(std::string name)
+
+    fs::rename(
+        tmp_file,
+        json_file,
+        ec
+    );
+
+
+    if(ec)
+    {
+        throw std::runtime_error(
+            "Bridge rename failed: "
+            + ec.message()
+        );
+    }
+}
+
+
+
+
+    std::string receive(
+        const std::string& name
+    )
     {
 
-        std::string json_file =
-            runtime + "/" + name + ".json";
+        fs::path json_file =
+            runtime / (name + ".json");
 
 
 
@@ -93,10 +149,20 @@ public:
             if(fs::exists(json_file))
             {
 
-                std::ifstream in(json_file);
-                if (!in) {
-                    continue;
-                }
+                std::ifstream in(
+                    json_file
+                );
+
+
+                if(!in)
+{
+    std::this_thread::sleep_for(
+        std::chrono::milliseconds(10)
+    );
+
+    continue;
+}
+
 
 
                 std::string data(
@@ -111,8 +177,12 @@ public:
 
 
 
-                in.close();
-                fs::remove(json_file);
+                std::error_code ec;
+
+                fs::remove(
+                    json_file,
+                    ec
+                );
 
 
 

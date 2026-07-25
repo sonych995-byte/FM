@@ -1,82 +1,160 @@
 #include "CORE/include/common.hpp"
 #include "CORE/include/utils.hpp"
 #include "CORE/include/commands.hpp"
-#include <cstdlib>
-
-Bridge bridge;
 
 
+Bridge bridge(
+    std::filesystem::absolute("runtime")
+);
 
-int main() {
 
-    while (true) {
+int main()
+{
 
-        std::string input = bridge.receive("request");
+    while (true)
+    {
 
-        std::vector<std::string> args;
+        try
+        {
 
-        try {
-            args = split(input);
-        } catch (const std::exception& e) {
-            bridge.send(std::string("Error: ") + e.what(), "response");
-            continue;
-        }
+            std::string input = bridge.receive("request");
 
-        if (args.empty()) {
-            continue;
-        }
 
-        if (args[0] == "exit") {
-            break;
-        }
+            std::vector<std::string> args;
 
-        if (args[0] == "cp") {
-            cmd_cp(args);
-        }
-        else if (args[0] == "rn") {
-            cmd_rn(args);
-        }
-        else if (args[0] == "mv") {
-            cmd_mv(args);
-        }
-        else if (args[0] == "rm") {
-            cmd_rm(args);
-        }
-        else if (args[0] == "cd") {
-            cmd_cd(args);
-        }
-        else if (args[0] == "mk") {
-            cmd_mk(args);
-        }
-        else if (args[0] == "info") {
-            cmd_info(args);
-        }
-        else if (args[0] == "ls") {
-            cmd_ls(args);
-        }
-        else if (args[0] == "cat") {
-            cmd_cat(args);
-        }
-        else if (args[0] == "find") {
-            cmd_find(args);
-        }
-        else if (args[0] == "edit") {
-            cmd_edit(args);
-        }
-        else if (args[0] == "pwd") {
-            cmd_pwd();
-        }
-        else if (args[0] == "help") {
-            cmd_help();
-        }
-        else if (args[0] == "oscmd") {
-            cmd_oscmd(args);
-        }
-        else {
 
-            bridge.send("Invalid command", "response");
+            try
+            {
+                args = split(input);
+            }
+            catch (const std::exception& e)
+            {
+                bridge.send(
+                    std::string("Error: ") + e.what(),
+                    "response"
+                );
+
+                continue;
+            }
+
+
+
+            if (args.empty())
+            {
+                continue;
+            }
+
+
+
+            if (args[0] == "exit")
+            {
+                bridge.send(
+                    "Core shutting down",
+                    "response"
+                );
+
+                break;
+            }
+
+
+
+            if (args[0] == "cp")
+            {
+                cmd_cp(args);
+            }
+
+            else if (args[0] == "rn")
+            {
+                cmd_rn(args);
+            }
+
+            else if (args[0] == "mv")
+            {
+                cmd_mv(args);
+            }
+
+            else if (args[0] == "rm")
+            {
+                cmd_rm(args);
+            }
+
+            else if (args[0] == "cd")
+            {
+                cmd_cd(args);
+            }
+
+            else if (args[0] == "mk")
+            {
+                cmd_mk(args);
+            }
+
+            else if (args[0] == "info")
+            {
+                cmd_info(args);
+            }
+
+            else if (args[0] == "ls")
+            {
+                cmd_ls(args);
+            }
+
+            else if (args[0] == "cat")
+            {
+                cmd_cat(args);
+            }
+
+            else if (args[0] == "find")
+            {
+                cmd_find(args);
+            }
+
+            else if (args[0] == "edit")
+            {
+                cmd_edit(args);
+            }
+
+            else if (args[0] == "pwd")
+            {
+                cmd_pwd();
+            }
+
+            else if (args[0] == "help")
+            {
+                cmd_help();
+            }
+
+            else if (args[0] == "oscmd")
+            {
+                cmd_oscmd(args);
+            }
+
+            else
+            {
+                bridge.send(
+                    "Invalid command",
+                    "response"
+                );
+            }
+
+
         }
+        catch (const std::exception& e)
+{
+
+    std::cerr
+        << "[CORE ERROR] "
+        << e.what()
+        << std::endl;
+
+
+    std::this_thread::sleep_for(
+        std::chrono::milliseconds(100)
+    );
+
+}
+
     }
+
 
     return 0;
 }

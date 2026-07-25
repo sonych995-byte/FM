@@ -11,13 +11,23 @@ void cmd_cd(const std::vector<std::string>& args) {
 
     try {
 
-        // Change the process working directory for the next commands.
         fs::current_path(args[1]);
-        bridge.send("Directory changed successfully", "response");
+
+        // Send current path back to GUI
+        bridge.send(
+            "PATH:" + fs::current_path().string(),
+            "response"
+        );
+
         return;
 
     } catch (const fs::filesystem_error& e) {
-        bridge.send("Error: Unable to change directory", "response");
+
+        bridge.send(
+            "Error: Unable to change directory",
+            "response"
+        );
+
         return;
     }
 }

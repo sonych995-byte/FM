@@ -6,6 +6,8 @@
 #include <filesystem>
 #include <fstream>
 #include <exception>
+#include <thread>
+#include <chrono>
 #include "Bridge.hpp"
 
 namespace fs = std::filesystem;

@@ -22,6 +22,7 @@ expects/returns):
     to the browser byte-for-byte (as JSON), unmodified.
 """
 
+import webbrowser
 import atexit
 import os
 import socket
@@ -39,7 +40,42 @@ from Bridge import Bridge
 # Config
 # --------------------------------------------------------------------------
 HOST = "127.0.0.1"          # loopback only — never 0.0.0.0
-PORT = 5000
+
+
+def _find_available_port(default_port: int, host: str = HOST) -> int:
+    """Return the first free port starting from the requested default."""
+    env_port = os.environ.get("FM_PORT")
+    if env_port:
+        try:
+            return int(env_port)
+        except ValueError:
+            print(f"[run.py] invalid FM_PORT value {env_port!r}; using {default_port}", file=sys.stderr)
+
+    candidates = [default_port]
+    if default_port == 5000:
+        candidates.extend(range(5001, 5010))
+    else:
+        candidates.extend(range(default_port + 1, default_port + 10))
+
+    for candidate in candidates:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            try:
+                sock.bind((host, candidate))
+                return candidate
+            except OSError:
+                continue
+
+    raise RuntimeError(f"no free port found starting from {default_port}")
+
+
+PORT = _find_available_port(5000)
+
+def open_browser():
+    webbrowser.open(
+        f"http://{HOST}:{PORT}",
+        new=2
+    )
 
 BASE_DIR = Path(__file__).resolve().parent
 CORE_PATH = BASE_DIR / ("core.exe" if os.name == "nt" else "core")
@@ -56,7 +92,7 @@ ALLOWED_CLIENTS = {"127.0.0.1", "::1"}
 # Only one request/response round trip may be in flight at a time (the
 # bridge is a single JSON-file channel), so every call is serialized
 # through _bridge_lock.
-bridge = Bridge(BASE_DIR / "runtime")
+bridge = Bridge(str(BASE_DIR / "runtime"))
 _bridge_lock = threading.Lock()
 
 
@@ -110,12 +146,20 @@ def api_run():
     body = request.get_json(silent=True) or {}
     command = body.get("command", "")
     if not command:
-        return jsonify({"ok": False, "output": "missing command"}), 400
+        return jsonify({"ok": False, "status": "error", "output": "missing command", "response": "missing command"}), 400
     try:
         output = call_core(command)
     except TimeoutError:
-        return jsonify({"ok": False, "output": "core did not respond"}), 504
-    return jsonify({"ok": not output.startswith("Error:") and not output.startswith("Usage:"), "output": output})
+        return jsonify({"ok": False, "status": "error", "output": "core did not respond", "response": "core did not respond"}), 504
+
+    is_error = output.startswith("Error:") or output.startswith("Usage:") or output.startswith("Invalid command")
+    status = "error" if is_error else "success"
+    return jsonify({
+        "ok": not is_error,
+        "status": status,
+        "output": output,
+        "response": output,
+    })
 
 
 # --------------------------------------------------------------------------
@@ -153,10 +197,26 @@ def _stop_core():
         _core_process.terminate()
 
 
-if __name__ == "__main__":
-    threading.Thread(target=_launch_core_once_server_is_up, daemon=True).start()
+def _startup():
+    _launch_core_once_server_is_up()
 
-    # debug=False is deliberate: this app can end up triggering `oscmd`
-    # (raw OS command execution) on the core side, so the last thing it
-    # needs is Werkzeug's debugger/reloader exposed on top of that.
-    app.run(host=HOST, port=PORT, debug=False, threaded=True)
+    time.sleep(1)
+
+    open_browser()
+
+
+if __name__ == "__main__":
+
+    threading.Thread(
+        target=_startup,
+        daemon=True
+    ).start()
+
+    print(f"[run.py] starting Flask on {HOST}:{PORT}")
+
+    app.run(
+        host=HOST,
+        port=PORT,
+        debug=False,
+        threaded=True
+    )

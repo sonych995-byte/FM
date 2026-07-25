@@ -193,12 +193,20 @@
     background:var(--surface);
     padding:10px 18px;
     display:flex;
-    align-items:center;
-    gap:10px;
+    flex-direction:column;
+    gap:8px;
     min-height:54px;
   }
-  .receipt{
+  .command-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .command-input{
     flex:1;
+    min-width:0;
+  }
+  .receipt{
     display:flex;
     align-items:center;
     gap:6px;
@@ -391,11 +399,16 @@
   </div>
 
   <div class="composer">
+    <div class="command-row">
+      <input id="rawCommandInput" class="quick-input command-input" type="text" spellcheck="false" autocomplete="off" placeholder="type an FM command, e.g. help or ls .">
+    </div>
     <div class="receipt" id="receipt">
       <span class="placeholder">right-click a file or folder to act on it</span>
     </div>
-    <button class="btn subtle" id="btnClear" style="display:none;">clear</button>
-    <button class="btn accent" id="btnRun" disabled>Run ▸</button>
+    <div class="command-row">
+      <button class="btn subtle" id="btnClear" style="display:none;">clear</button>
+      <button class="btn accent" id="btnRun" disabled>Run ▸</button>
+    </div>
   </div>
 
   <!-- context menu (shared for entries + empty area) -->
@@ -465,6 +478,7 @@ const el = {
   grid: document.getElementById('grid'),
   empty: document.getElementById('emptyState'),
   receipt: document.getElementById('receipt'),
+  rawCommandInput: document.getElementById('rawCommandInput'),
   btnRun: document.getElementById('btnRun'),
   btnClear: document.getElementById('btnClear'),
   log: document.getElementById('log'),
@@ -638,9 +652,10 @@ function renderReceipt(){
 }
 
 function syncRunEnabled(){
-  if(!state.pending){ el.btnRun.disabled = true; return; }
+  const typed = (el.rawCommandInput.value || '').trim();
+  if(!state.pending){ el.btnRun.disabled = !typed; return; }
   const missing = state.pending.tokens.some(t => t.input && !t.value?.trim());
-  el.btnRun.disabled = missing;
+  el.btnRun.disabled = !typed && missing;
 }
 
 function startVerb(verb, tokens){
@@ -701,6 +716,11 @@ function buildCommandString(){
 }
 
 function attemptRun(){
+  const typed = (el.rawCommandInput.value || '').trim();
+  if(typed){
+    executeCommand(typed, { showResult:true, resultTitle:'Command result', clearInput:true });
+    return;
+  }
   if(!state.pending || el.btnRun.disabled) return;
   const command = buildCommandString();
   if(state.pending.verb === 'oscmd'){
@@ -715,25 +735,42 @@ function attemptRun(){
   executeCommand(command);
 }
 el.btnRun.addEventListener('click', attemptRun);
+el.rawCommandInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') { e.preventDefault(); attemptRun(); }});
 
 async function executeCommand(command, opts = {}){
   el.btnRun.disabled = true;
   try{
     const result = await API.runCommand(command);
-    const ok = result.ok !== false;
-    logEntry(command, ok, result.output || '');
-    if(!ok){
-      openModal({ kind:'error', title:'Command failed', message: result.output || 'The command did not complete successfully.' });
-    } else if(opts.showResult){
-      openModal({ kind:'info', title: opts.resultTitle || 'Result', message: result.output || '(no output)' });
+    const responseText = result.response || result.output || '';
+
+    // Update GUI path after cd command
+    if(responseText.startsWith("PATH:")){
+      state.path = responseText.substring(5);
     }
+
+    const ok = result.ok !== false;
+    logEntry(command, ok, responseText);
+
+    if(!ok){
+      openModal({ kind:'error', title:'Command failed', message: responseText || 'The command did not complete successfully.' });
+    } else if(opts.showResult){
+      openModal({ kind:'info', title: opts.resultTitle || 'Result', message: responseText || '(no output)' });
+    }
+
     state.pending = null;
     renderReceipt();
+
+    if(opts.clearInput){ 
+      el.rawCommandInput.value = ''; 
+    }
+
     await refresh();
+
   } catch(err){
     logEntry(command, false, String(err));
     openModal({ kind:'error', title:'Something went wrong', message:String(err) });
   } finally {
+    syncRunEnabled();
     el.btnRun.disabled = false;
   }
 }

@@ -231,6 +231,11 @@ The Flask/browser interface and C++ bridge are operational. The C++ core can
 be built with the command above and the supported file-management commands can
 be run through the local API or the bundled GUI.
 
+## PyCppBridge
+
+The method we use to send data.
+[PyCppBrige](https://github.com/sonych995-byte/PyCppBridge)
+
 ## License
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for

@@ -120,6 +120,74 @@ same directory, because they would share this bridge directory.
 Stop the application with `Ctrl+C`. `run.py` terminates the core process when
 the Python process exits normally.
 
+## Run FM from anywhere
+
+By default you must run `python3 run.py` from inside the project folder.
+To invoke FM as a plain `fm` command from **any** directory, put a small
+launcher script on your `PATH`. Two launchers are provided:
+
+- `fm` — for Linux, macOS, and Termux
+- `fm.bat` — for Windows
+
+Both scripts locate the real FM project folder on their own and `cd` into
+it before running `run.py`, so it doesn't matter where you are when you
+type `fm`.
+
+### Linux / macOS
+
+1. Copy `fm` into the repository root (next to `run.py`) and make it executable:
+```bash
+   chmod +x fm
+```
+2. Link it into a directory already on your `PATH`:
+```bash
+   sudo ln -s "$(pwd)/fm" /usr/local/bin/fm
+```
+   (On Apple Silicon Macs using Homebrew's default prefix, use
+   `/opt/homebrew/bin/fm` instead if that's the directory on your `PATH`.)
+3. Open a new terminal and run:
+```bash
+   fm
+```
+
+### Windows
+
+1. Copy `fm.bat` into the repository root (next to `run.py`).
+2. Add the repository folder to your `PATH`:
+   - Press `Win`, search **"Edit the system environment variables"**.
+   - Click **Environment Variables** → under **User variables**, select
+     `Path` → **Edit** → **New** → paste the full path to the FM folder
+     (e.g. `C:\Users\you\FM`).
+   - Click OK on all dialogs.
+3. Open a new Command Prompt or PowerShell window and run:
+```powershell
+   fm
+```
+
+### Termux (Android)
+
+1. Copy `fm` into the repository root and make it executable:
+```bash
+   chmod +x fm
+```
+2. Link it into Termux's own bin directory (already on `$PATH`):
+```bash
+   ln -s "$(pwd)/fm" $PREFIX/bin/fm
+```
+3. From any Termux session, run:
+```bash
+   fm
+```
+
+**Notes for all platforms:**
+- The launcher still requires the `core` (or `core.exe`) binary to be
+  built and sitting in the FM project folder — see **Build** above.
+- If you created a virtual environment per **Setup**, both launchers
+  will automatically prefer `.venv`'s Python interpreter over the
+  system one, so you don't need to activate the venv manually.
+- `xdg-open` (Linux) must still be installed and on `PATH` for the
+  browser to open automatically on Linux/Termux.
+
 ## Command Reference
 
 The web interface sends the following command forms to the C++ core:

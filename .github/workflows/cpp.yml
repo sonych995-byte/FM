@@ -3,44 +3,44 @@ name: FM CI
 on:
   push:
     branches: ["main"]
-
   pull_request:
     branches: ["main"]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
-
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Install compiler
         run: sudo apt update && sudo apt install -y g++
 
-      - name: Build FM
+      - name: Build FM core
         run: |
-          g++ -std=c++17 \
-          -o fm \
+          g++ -std=c++17 -pthread -I. \
+          -o core \
           main.cpp \
-          src/utils.cpp \
-          src/cp.cpp \
-          src/rn.cpp \
-          src/rm.cpp \
-          src/mv.cpp \
-          src/cd.cpp \
-          src/mk.cpp \
-          src/cat.cpp \
-          src/find.cpp \
-          src/edit.cpp \
-          src/info.cpp \
-          src/ls.cpp \
-          src/pwd.cpp \
-          src/oscmd.cpp \
-          src/help.cpp
+          CORE/src/utils.cpp \
+          CORE/src/cp.cpp \
+          CORE/src/rn.cpp \
+          CORE/src/rm.cpp \
+          CORE/src/mv.cpp \
+          CORE/src/cd.cpp \
+          CORE/src/mk.cpp \
+          CORE/src/cat.cpp \
+          CORE/src/find.cpp \
+          CORE/src/edit.cpp \
+          CORE/src/info.cpp \
+          CORE/src/ls.cpp \
+          CORE/src/pwd.cpp \
+          CORE/src/oscmd.cpp \
+          CORE/src/help.cpp
 
+      - name: Verify executable
+        run: |
+          test -f core
+          echo "Build successful"
       - name: Verify executable
         run: |
           test -f fm

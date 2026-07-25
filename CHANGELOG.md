@@ -3,6 +3,7 @@
 ## v0.7.0
 
 ### Added
+- add gui
 - Flask web server in `run.py`, bound to `127.0.0.1:5000`
 - Browser-based file manager interface in `templates/fm-gui.html`
 - Python/C++ file bridge using JSON files in the `runtime/` directory

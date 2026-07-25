@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+#
+# fm — global launcher for the FM file manager.
+#
+# This script finds its own real location (resolving symlinks), then
+# runs `python3 run.py` from inside that directory, no matter which
+# directory the user is currently standing in when they type `fm`.
+#
+# Install: see README.md, section "Run FM from anywhere".
+
+set -e
+
+# Resolve the real path of this script, following symlinks (so a
+# symlink placed in /usr/local/bin or $PREFIX/bin still finds the
+# actual FM project folder).
+SOURCE="${BASH_SOURCE[0]:-$0}"
+while [ -h "$SOURCE" ]; do
+  DIR="$(cd -P "$(dirname "$SOURCE")" >/dev/null 2>&1 && pwd)"
+  SOURCE="$(readlink "$SOURCE")"
+  # If $SOURCE was a relative symlink, resolve it relative to the
+  # symlink's own directory.
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+FM_DIR="$(cd -P "$(dirname "$SOURCE")" >/dev/null 2>&1 && pwd)"
+
+cd "$FM_DIR"
+
+# Prefer a project virtual environment if one exists.
+if [ -x "$FM_DIR/.venv/bin/python3" ]; then
+  exec "$FM_DIR/.venv/bin/python3" run.py "$@"
+else
+  exec python3 run.py "$@"
+fi
